@@ -71,6 +71,12 @@ public class Vector
     double yCoord = v1.y + v2.y;
     return new Vector(xCoord, yCoord);
   }
+  public static Vector subVectors(Vector v1, Vector v2)
+  {
+    double xCoord = v1.x - v2.x;
+    double yCoord = v1.y - v2.y;
+    return new Vector(xCoord, yCoord);
+  }
   public static double bearingToAng(double bearing) 
   {
     double b = (bearing + 270) % 360;

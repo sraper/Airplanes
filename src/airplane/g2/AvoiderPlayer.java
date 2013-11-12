@@ -1,14 +1,18 @@
 package airplane.g2;
 
+import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import org.apache.log4j.Logger;
 import airplane.sim.Plane;
+
+import static airplane.g2.Vector.*;
 
 
 
 public class AvoiderPlayer extends airplane.sim.Player {
 	
 	private static final int FINISHED = -2;
+	private static final double COLLISION_AVOIDANCE_THRESHOLD = 2;
 
 	private Logger logger = Logger.getLogger(this.getClass()); // for logging
 	
@@ -50,15 +54,28 @@ public class AvoiderPlayer extends airplane.sim.Player {
 		    } else {
 		    
 		    	Vector goalVec = new Vector(calculateBearing(p.getLocation(), p.getDestination()));
-		    	Vector outVec = goalVec;
+		    	//Vector planeAvoidanceVector = planeAvoidanceVector(p, planes);
+		    	//Vector outVec = Vector.addVectors(goalVec, planeAvoidanceVector);
 		    	
 		    	//currVectors.put(p, addVectors(currVectors.get(p), new Vector(180)));
-		    	bearings[i] = outVec.getBearing();
+		    	bearings[i] = goalVec.getBearing();
 		    }
 		}
 		
 		return bearings;
 	}
-	
 
+	private Vector planeAvoidanceVector(Plane p, ArrayList<Plane> planes) {
+		Vector outVec = new Vector(0, 0);
+		Point2D.Double pl = p.getLocation();
+		
+		for (Plane o : planes) {
+			Vector diff = subVectors(new Vector(o.getLocation()), new Vector(p.getLocation()));
+			if (p != o && pl.distance(o.getLocation()) < COLLISION_AVOIDANCE_THRESHOLD) {
+				outVec = subVectors(outVec, diff);
+			}
+		}
+		outVec.normalize();
+		return outVec;
+	}	
 }
