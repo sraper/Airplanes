@@ -21,6 +21,12 @@ public class Vector
     x = (float) point.getX();
     y = (float) point.getY();
   }
+  public Vector(double bearing) 
+  {
+	double bearingAngle = bearingToAng(bearing);
+	x = Math.cos(Math.toRadians(bearingAngle));
+	y = Math.sin(Math.toRadians(bearingAngle));
+  }
   public void normalize()
   {
     float vectorLength = length();
@@ -64,6 +70,20 @@ public class Vector
     double xCoord = v1.x + v2.x;
     double yCoord = v1.y + v2.y;
     return new Vector(xCoord, yCoord);
+  }
+  public static double bearingToAng(double bearing) 
+  {
+    double b = (bearing + 270) % 360;
+	return b < 0 ? b + 360 : b;
+  }
+  public static double angToBearing(double angle) 
+  {
+	double b = (angle + 90) % 360;
+	return b < 0 ? b + 360 : b;
+  }
+  public double getBearing() {
+	double ang = Math.toDegrees(Math.atan2(y, x));
+	return angToBearing(ang);
   }
   public double x = 0;
   public double y = 0;
