@@ -1,0 +1,11 @@
+- 1. Sort planes from longest trip to shortest
+- 2. Created list FINISHED
+- 3. For plane in sorted order...
+  - 1. Start assuming it leaves at its departure time.
+  - 2. Check if at that time, it would conflict with any flights in FINISHED at that time
+    - 1. 
+  - 3. If yes, increase departure time by time for conflicting flight to clear that area. GOTO 2
+       If no, add this flight to FINISHED. Map PLANE to TIME
+- Fly planes according to PLANE -> TIME table.
+
+       

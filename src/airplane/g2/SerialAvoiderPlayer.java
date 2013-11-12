@@ -9,7 +9,7 @@ import static airplane.g2.Vector.*;
 
 
 
-public class AvoiderPlayer extends airplane.sim.Player {
+public class SerialAvoiderPlayer extends airplane.sim.Player {
 	
 	private static final int FINISHED = -2;
 	private static final int WAITING = -1;
