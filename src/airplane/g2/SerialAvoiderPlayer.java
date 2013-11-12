@@ -21,10 +21,10 @@ public class SerialAvoiderPlayer extends airplane.sim.Player {
 	private static final int WAITING = -1;
 	
 	// Dials and Knobs
-	private static final double PLANE_DIST_THRESHOLD = 15; // Distance before collision prevention occurs
-	private static final double ALLOWED_PROXIMITY = 20;
+	private static final double PLANE_DIST_THRESHOLD = 20; // Distance before collision prevention occurs
+	private static final double ALLOWED_PROXIMITY = 10;
 	private static final double WALL_AVOIDANCE_THRESHOLD = 5;
-	private static final float  WALL_AVOIDANCE_FORCE = 2;
+	private static final float  WALL_AVOIDANCE_FORCE = 10;
 	private static final double TURN_RADIUS = 9.5; // Max degrees turned per timestep
 	private static final double YOLO_FACTOR = 1.4; // Scaling factor for tendency to ignore other planes near airport.
 
@@ -111,10 +111,7 @@ public class SerialAvoiderPlayer extends airplane.sim.Player {
 	// Calculate avoidance vector for plane-plane collisions
 	private Vector planeAvoidanceVector(Plane p, ArrayList<Plane> planes, double[] bearings) {
 		Vector outVec = new Vector(0, 0);
-		Vector currVec = new Vector(p.getBearing());
-		
 		Point2D.Double pl = p.getLocation();
-		
 		double avoidanceThreshold = Math.min(PLANE_DIST_THRESHOLD, pl.distance(p.getDestination()) * YOLO_FACTOR);
 		
 		// TODO(TG): We really only need to avoid planes that we will get closer to if we continue our same bearing.
@@ -133,8 +130,17 @@ public class SerialAvoiderPlayer extends airplane.sim.Player {
 	}	
 	
 	private boolean collisionPossible(Plane p, Plane o) {
-		// TODO(TG): Write this.
-		return o.getBearing() >= 0;
+		Vector pVec = new Vector(p.getBearing());
+		Vector oVec = new Vector(o.getBearing());
+		pVec.normalize();
+		oVec.normalize();
+		
+		Point2D.Double pPos = p.getLocation();
+		Point2D.Double oPos = o.getLocation();
+		Point2D.Double pPosDelta = new Point2D.Double(pPos.x + pVec.x, pPos.y + pVec.y);
+		Point2D.Double oPosDelta = new Point2D.Double(oPos.x + oVec.x, oPos.y + oVec.y);
+		
+		return pPos.distance(oPos) > pPosDelta.distance(oPosDelta);
 	}
 
 	private Vector wallAvoidanceVector(Plane p, ArrayList<Plane> planes) {
