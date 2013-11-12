@@ -4,6 +4,8 @@ import java.awt.geom.Point2D;
 import java.awt.geom.Line2D;
 import java.lang.Math;
 
+import org.apache.log4j.Logger;
+
 public class Vector
 {
   public Vector(double xCoord, double yCoord)
@@ -61,6 +63,21 @@ public class Vector
     double sin = Math.sin(angle);
     return new Vector (x*cos - y*sin, x*sin + y*cos);
   }
+  public Vector rotateToward(Vector v, double degrees) 
+  {
+	 double ang = this.angleBetween(v);
+	 
+	 // This is so fucking gross.
+	 if (v.angleBetween(this.rotate(degrees)) < v.angleBetween(this.rotate(-degrees))) {
+		 return this.rotate(degrees);
+	 } else {
+		 return this.rotate(-degrees);
+	 }
+  }
+  public double angleBetween(Vector v) 
+  {
+	  return Math.toDegrees(Math.acos(this.dotProduct(v) / (this.length() * v.length())));
+  }
   public Point2D getPoint ()
   {
     return new Point2D.Double(x, y);
@@ -76,6 +93,10 @@ public class Vector
     double xCoord = v1.x - v2.x;
     double yCoord = v1.y - v2.y;
     return new Vector(xCoord, yCoord);
+  }
+  public double dotProduct(Vector v) 
+  {
+	return this.x * v.x + this.y * v.y;
   }
   public static double bearingToAng(double bearing) 
   {
@@ -93,5 +114,6 @@ public class Vector
   }
   public double x = 0;
   public double y = 0;
+  private Logger logger = Logger.getLogger(this.getClass());
 }
 

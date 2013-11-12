@@ -12,8 +12,17 @@ import static airplane.g2.Vector.*;
 public class AvoiderPlayer extends airplane.sim.Player {
 	
 	private static final int FINISHED = -2;
-	private static final double COLLISION_AVOIDANCE_THRESHOLD = 2;
+	private static final int WAITING = -1;
+	
+	// Dials and Knobs
+	private static final double PLANE_DIST_THRESHOLD = 20; // Distance before collision prevention occurs
+	private static final double WALL_AVOIDANCE_THRESHOLD = 10;
+	private static final float  WALL_AVOIDANCE_FORCE = 2;
+	private static final double TURN_RADIUS = 9.5; // Max degrees turned per timestep
+	private static final double YOLO_FACTOR = 0.5; // Scaling factor for tendency to ignore other planes near airport.
 
+	private double[] bearings;
+	
 	private Logger logger = Logger.getLogger(this.getClass()); // for logging
 	
 	@Override
@@ -41,26 +50,28 @@ public class AvoiderPlayer extends airplane.sim.Player {
 	@Override
 	public double[] updatePlanes(ArrayList<Plane> planes, int round, double[] bearings) {
 
-		logger.info("::: ROUND = " + round);
+		this.bearings = bearings; // Make it a little bit easier to access bearings in helper methods.
+		
 		for (int i = 0; i < planes.size(); i++) {
-			logger.info("PLANE = " + i);
 		    Plane p  = planes.get(i);
 		    
-		    if (round <= p.getDepartureTime() || p.getBearing() == FINISHED) {
+		    Vector currVec = new Vector(bearings[i]);
+		    Vector goalVec = new Vector(calculateBearing(p.getLocation(), p.getDestination()));
+		    
+		    if (round <= p.getDepartureTime() || p.getBearing() == FINISHED 
+		    		|| bearings[i] == WAITING && planeTooClose(p, planes)) { 
 		    	continue;
-		    } else if (round == p.getDepartureTime() + 1) {
-		    	bearings[i] = calculateBearing(p.getLocation(), p.getDestination());
+			} else if (round > p.getDepartureTime() && bearings[i] == WAITING) {
+		    	bearings[i] = goalVec.getBearing();
 		    	continue;
 		    } else {
-		    
-		    	Vector goalVec = new Vector(calculateBearing(p.getLocation(), p.getDestination()));
-		    	//Vector planeAvoidanceVector = planeAvoidanceVector(p, planes);
-		    	//Vector outVec = Vector.addVectors(goalVec, planeAvoidanceVector);
-		    	
-		    	//currVectors.put(p, addVectors(currVectors.get(p), new Vector(180)));
-		    	bearings[i] = goalVec.getBearing();
+		    	Vector planeAvoidVec = addVectors(goalVec, planeAvoidanceVector(p, planes));
+		    	Vector wallAvoidVec  = addVectors(planeAvoidVec, wallAvoidanceVector(p, planes));
+
+		    	bearings[i] = currVec.rotateToward(wallAvoidVec, TURN_RADIUS).getBearing();
 		    }
 		}
+		
 		
 		return bearings;
 	}
@@ -69,13 +80,41 @@ public class AvoiderPlayer extends airplane.sim.Player {
 		Vector outVec = new Vector(0, 0);
 		Point2D.Double pl = p.getLocation();
 		
-		for (Plane o : planes) {
+		double avoidanceThreshold = Math.min(PLANE_DIST_THRESHOLD, pl.distance(p.getDestination()) * YOLO_FACTOR);
+		
+		for (int i = 0; i < planes.size(); i++) {
+			Plane o = planes.get(i);
 			Vector diff = subVectors(new Vector(o.getLocation()), new Vector(p.getLocation()));
-			if (p != o && pl.distance(o.getLocation()) < COLLISION_AVOIDANCE_THRESHOLD) {
+			if (p != o && pl.distance(o.getLocation()) < avoidanceThreshold) {
 				outVec = subVectors(outVec, diff);
+				// [TG]: Following line deviates from boid formula, causes planes to turn opposite ways.
+				outVec = addVectors(outVec, new Vector(bearings[i]).rotateOpposite());
 			}
 		}
-		outVec.normalize();
+
 		return outVec;
 	}	
+	
+	private Vector wallAvoidanceVector(Plane p, ArrayList<Plane> planes) {
+		Vector outVec = new Vector(0, 0);
+		Point2D.Double loc = p.getLocation();
+		if (loc.x < WALL_AVOIDANCE_THRESHOLD) outVec = addVectors(outVec, new Vector(90));
+		if (loc.y < WALL_AVOIDANCE_THRESHOLD) outVec = addVectors(outVec, new Vector(180));
+		if (loc.x > 100 - WALL_AVOIDANCE_THRESHOLD) outVec = addVectors(outVec, new Vector(270));
+		if (loc.y > 100 - WALL_AVOIDANCE_THRESHOLD) outVec = addVectors(outVec, new Vector(0));
+		
+		//outVec.normalize();
+		outVec.multiply(WALL_AVOIDANCE_FORCE);
+		logger.info("OUTVEC: " + outVec.x + " " + outVec.y);
+		
+		return outVec;
+	}
+	
+	private boolean planeTooClose(Plane p, ArrayList<Plane> planes) {
+		for (Plane o : planes) {
+			if (p != o && o.getBearing() != -1 && p.getLocation().distance(o.getLocation()) < 6) return true;
+		}
+		
+		return false;
+	}
 }
