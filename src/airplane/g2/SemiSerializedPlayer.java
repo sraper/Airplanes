@@ -9,7 +9,7 @@ import static airplane.g2.Vector.*;
 
 
 
-public class AvoiderPlayer extends airplane.sim.Player {
+public class SemiSerializedPlayer extends airplane.sim.Player {
 	
 	private static final int FINISHED = -2;
 	private static final int WAITING = -1;
@@ -19,15 +19,21 @@ public class AvoiderPlayer extends airplane.sim.Player {
 	private static final double WALL_AVOIDANCE_THRESHOLD = 10;
 	private static final float  WALL_AVOIDANCE_FORCE = 2;
 	private static final double TURN_RADIUS = 9.5; // Max degrees turned per timestep
-	private static final double YOLO_FACTOR = 0.5; // Scaling factor for tendency to ignore other planes near airport.
-
+	private static final double YOLO_FACTOR = 2; // Scaling factor for tendency to ignore other planes near airport.
+	
 	private Logger logger = Logger.getLogger(this.getClass()); // for logging
 	
 	@Override
-	public void startNewGame(ArrayList<Plane> planes) { 
-		logger.info("Starting Game!");
+	public String getName() {
+		return "Avoider Player";
 	}
-	
+
+	@Override
+	public void startNewGame(ArrayList<Plane> planes) {
+		logger.info("Starting new game!");
+
+	}
+
 	@Override
 	public double[] updatePlanes(ArrayList<Plane> planes, int round, double[] bearings) {
 
@@ -73,11 +79,13 @@ public class AvoiderPlayer extends airplane.sim.Player {
 		return outVec;
 	}	
 	
+	// Determine whether two planes close to one another are actually at risk for colliding (i.e. they are 
+	// heading toward one another).
 	private boolean collisionPossible(Plane p, Plane o) {
-		// TODO(TG): Write this.
 		return true;
 	}
 
+	// Calculate avoidance vector for plane-wall collisions
 	private Vector wallAvoidanceVector(Plane p, ArrayList<Plane> planes) {
 		Vector outVec = new Vector(0, 0);
 		Point2D.Double loc = p.getLocation();
@@ -91,16 +99,11 @@ public class AvoiderPlayer extends airplane.sim.Player {
 		return outVec;
 	}
 	
+	// Determine if two planes are too close for one to launch.
 	private boolean planeTooClose(Plane p, ArrayList<Plane> planes) {
 		for (Plane o : planes) {
 			if (p != o && o.getBearing() != -1 && p.getLocation().distance(o.getLocation()) < 6) return true;
 		}
 		return false;
 	}
-	
-	@Override
-	public String getName() {
-		return "Avoider Player";
-	}
-	
 }

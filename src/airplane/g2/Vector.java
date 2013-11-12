@@ -65,13 +65,13 @@ public class Vector
   }
   public Vector rotateToward(Vector v, double degrees) 
   {
-	 double ang = this.angleBetween(v);
+	 double degToRotate = degrees; // Math.min(degrees, this.angleBetween(v));
 	 
 	 // This is so fucking gross.
 	 if (v.angleBetween(this.rotate(degrees)) < v.angleBetween(this.rotate(-degrees))) {
-		 return this.rotate(degrees);
+		 return this.rotate(degToRotate);
 	 } else {
-		 return this.rotate(-degrees);
+		 return this.rotate(-degToRotate);
 	 }
   }
   public double angleBetween(Vector v) 
