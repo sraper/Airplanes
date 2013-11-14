@@ -1,0 +1,294 @@
+  private Set<Line2D> walls;
+
+  void init ()
+  {
+    // init waypoints
+    for (Line2D wall: walls)
+    {
+      log.trace("Wall at (" + wall.getX1() + ", " + wall.getY1() + ") to (" + wall.getX2() + ", " + wall.getY2() + ")");
+      /*initializeVisibilityMap(wall.getP1());
+      initializeVisibilityMap(wall.getP2());*/
+
+      Vector p1 = new Vector(wall.getP1());
+      Vector p2 = new Vector(wall.getP2());
+      Vector lineTangent = new Vector(wall.getP2(), wall.getP1());
+      lineTangent.normalize();
+      lineTangent.multiply(starDist);
+      Vector along = lineTangent;
+      Vector opposite = lineTangent.rotateOpposite();
+      Vector cw = lineTangent.rotate90Clockwise();
+      Vector acw = lineTangent.rotate90AntiClockwise();
+
+      Vector triQuad1 = lineTangent.rotate(120);
+      Vector triQuad2 = lineTangent.rotate(-120);
+      Vector triQuadOpp1 = opposite.rotate(120);
+      Vector triQuadOpp2 = opposite.rotate(-120);
+
+
+      along.normalize();
+      along.multiply(waypointDist);
+      opposite.normalize();
+      opposite.multiply(waypointDist);
+
+      p1 = Vector.addVectors(p1, along);
+      p2 = Vector.addVectors(p2, opposite);
+
+      along.normalize();
+      along.multiply(starDist);
+      opposite.normalize();
+      opposite.multiply(starDist);
+
+      addWaypoint(p1, along, lines, false);
+      addWaypoint(p1, triQuad1, lines, false);
+      addWaypoint(p1, triQuad2, lines, false);
+
+      addWaypoint(p2, opposite, lines, false);
+      addWaypoint(p2, triQuadOpp1, lines, false);
+      addWaypoint(p2, triQuadOpp2, lines, false);
+    }
+    originalWaypointSet.addAll(waypointSet);
+  }
+
+
+  protected boolean isInLineOfSight(double x, double y, double newX, double newY)
+  {
+    Line2D.Double pathLine = new Line2D.Double(x,y,newX,newY);
+    for(Line2D l : walls)
+    {
+      if(l.intersectsLine(pathLine))
+        return false;
+    }
+    return true;
+  }
+
+  Point2D getNearWallPoint(Point2D point, double minDistance)
+  {
+    for (Line2D wall: walls)
+    {
+      if (point.distance(wall.getP1()) < minDistance)
+      {
+        return wall.getP1();
+      }
+      else if (point.distance(wall.getP2()) < minDistance)
+      {
+        return wall.getP2();
+      }
+    }
+    return null;
+  }
+
+  boolean checkOnWall(Point2D point)
+  {
+    for (Line2D wall: walls)
+    {
+      if (wall.ptSegDist(point) < 1)
+      {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  boolean inBoardRange(Point2D point)
+  {
+    if (point.getX() > maxX || point.getX() < 0 || point.getY() > maxY || point.getY() < 0)
+      return false;
+    else
+      return true;
+  }
+
+
+  private double GetAStarDistance (Point2D source, Point2D target)
+  {
+    if (isInLineOfSight(source, target))
+    {
+      return source.distance(target);
+    }
+    Deque<Waypoint> path = AStar (source, target);
+    if (path != null)
+    {
+      Waypoint waypointLast = path.peekLast();
+      /*Waypoint waypointFirst = path.peekFirst();
+      return (waypointLast.point.distance(target) + waypointFirst.point.distance(source) + GetPathDistance (path));*/
+      return waypointLast.storedSourceDistance;
+    }
+    else
+    {
+      return maxX;
+    }
+  }
+
+
+  Waypoint addWaypoint(Vector p, Vector v, ArrayList<Line2D> lines)
+  {
+    Point2D point;
+    Line2D line;
+    point = Vector.addVectors(p, v).getPoint();
+    // do not add if outside board
+    if (point.getX() > 100 || point.getX() < 0 || point.getY() > 100 || point.getY() < 0)
+      return null;
+    // do not add if near wall
+    Point2D wallPoint = getNearWallPoint(point, invalidWaypointDist);
+    //initializeVisibilityMap(point);
+    Waypoint retVal = addToVisibilityMap(point);
+    waypointSet.add(retVal);
+    line = new Line2D.Double(p.getPoint(), point);
+    lines.add(line);
+    return retVal;
+  }
+
+  // A* path finding algo
+  private Deque<Waypoint> AStar(Point2D source, Point2D target)
+  {
+    // revert to original waypointSet and visibilityMap
+    waypointSet = new HashSet<Waypoint>();
+    visibilityMap = new HashMap<Waypoint, Set<Waypoint>>();
+    waypointSet.addAll(originalWaypointSet);
+    visibilityMap.putAll(originalVisibilityMap);
+    // add target to visibilityMap and waypointSet
+    Waypoint waypointTarget = addToVisibilityMap(target);
+    waypointSet.add(waypointTarget);
+    // add source to visibilityMap and waypointSet
+    Waypoint waypointSource = addToVisibilityMap(source);
+    waypointSet.add(waypointSource);
+
+    /*log.trace("visibilityMap: " + visibilityMap);
+    log.trace("waypointSet: " + waypointSet);*/
+    // Mark source waypoint as openList and calculate F score
+    waypointSource.markAsOpenList();
+    double sourceDistance = 0;
+    waypointSource.updateFScore(sourceDistance, waypointTarget);
+
+    Waypoint waypointCurrent = waypointSource;
+
+    while (true)
+    {
+      // Check if unreachable
+      if (waypointCurrent == null)
+      {
+        cleanupWaypoints(waypointSet);
+        return null;
+      }
+      // Move towards waypointTarget
+      Set<Waypoint> visibleWaypoints = visibilityMap.get(waypointCurrent);
+      for (Waypoint waypoint : visibleWaypoints)
+      {
+        if (!waypoint.closedList && /*fail safe condition*/ waypoint != waypointCurrent)
+        {
+          double newDistance = waypointCurrent.currentSourceDistance + Waypoint.getDistance(waypointCurrent, waypoint);
+          if (newDistance < waypoint.currentSourceDistance || waypoint.currentSourceDistance == -1)
+          {
+            waypoint.markAsOpenList();
+            waypoint.setParent(waypointCurrent);
+            waypoint.updateFScore(newDistance, waypointTarget);
+            // Check for exit condition
+            if (waypoint == waypointTarget)
+            {
+              Deque<Waypoint> path = getPath(waypointSet, waypointSource, waypointTarget);
+              cleanupWaypoints(waypointSet);
+              return path;
+            }
+          }
+        }
+      }
+      waypointCurrent = leastFScore(waypointSet, waypointCurrent);
+      //log.trace("waypointCurrent: " + waypointCurrent + " waypointSource: " + waypointSource + " waypointTarget: " + waypointTarget);
+      if (waypointCurrent != null)
+        waypointCurrent.markAsClosedList();
+    }
+  }
+
+  private Waypoint addToVisibilityMap(Point2D target)
+  {
+    Waypoint waypoint1 = new Waypoint(target);
+    Set<Waypoint> waypointSet1 = new HashSet<Waypoint>();
+    visibilityMap.put(waypoint1, waypointSet1);
+    for (Waypoint waypoint2 : waypointSet)
+    {
+      if(isInLineOfSight(waypoint1.point, waypoint2.point))
+      {
+        Set<Waypoint> waypointSet2 = visibilityMap.get(waypoint2);
+        waypointSet1.add(waypoint2);
+        waypointSet2.add(waypoint1);
+      }
+    }
+    return waypoint1;
+  }
+
+  private Waypoint leastFScore(Set<Waypoint> waypoints, Waypoint waypointCurrent)
+  {
+    Waypoint leastScoreWaypoint = null;
+    double leastScore = -1;
+    for (Waypoint waypoint : waypoints)
+    {
+      if ((waypoint.fScore < leastScore || leastScoreWaypoint == null) && waypoint != waypointCurrent && waypoint.openList)
+      {
+        leastScore = waypoint.fScore;
+        leastScoreWaypoint = waypoint;
+      }
+    }
+    return leastScoreWaypoint;
+  }
+
+  private boolean checkClosedList(Set<Waypoint> waypoints, Waypoint waypointTarget)
+  {
+    for (Waypoint waypoint : waypoints)
+    {
+      if (waypoint == waypointTarget && waypoint.closedList)
+      {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private void cleanupWaypoints(Set<Waypoint> waypoints)
+  {
+    for (Waypoint waypoint : waypoints)
+    {
+      waypoint.cleanup();
+    }
+  }
+
+  private Deque<Waypoint> getPath(Set<Waypoint> waypoints, Waypoint waypointSource, Waypoint waypointTarget)
+  {
+    Waypoint waypointBacktrack = waypointTarget;
+    Deque<Waypoint> path = new ArrayDeque<Waypoint>();
+    while (true)
+    {
+      path.addFirst(waypointBacktrack);
+      waypointBacktrack = waypointBacktrack.parent;
+      if (waypointBacktrack == waypointSource)
+      {
+        cleanupWaypoints(waypointSet);
+        return path;
+      }
+    }
+  }
+
+  public Point2D.Float getIntersectionPoint(Line2D line1, Line2D line2) 
+  {
+    if (! line1.intersectsLine(line2) ) return null;
+      double px = line1.getX1(),
+            py = line1.getY1(),
+            rx = line1.getX2()-px,
+            ry = line1.getY2()-py;
+      double qx = line2.getX1(),
+            qy = line2.getY1(),
+            sx = line2.getX2()-qx,
+            sy = line2.getY2()-qy;
+
+      double det = sx*ry - sy*rx;
+      if (det == 0) 
+      {
+        return null;
+      } 
+      else 
+      {
+        double z = (sx*(qy-py)+sy*(px-qx))/det;
+        if (z==0 ||  z==1) return null;  // intersection at end point!
+        return new Point2D.Float(
+          (float)(px+z*rx), (float)(py+z*ry));
+      }
+  } // end intersection line-line
+
