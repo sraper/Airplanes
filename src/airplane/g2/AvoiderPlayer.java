@@ -16,7 +16,7 @@ public class AvoiderPlayer extends airplane.sim.Player {
 	
 	// Dials and Knobs
 	private static final double PLANE_DIST_THRESHOLD = 20; // Distance before collision prevention occurs
-	private static final double WALL_AVOIDANCE_THRESHOLD = 10;
+	private static final double WALL_AVOIDANCE_THRESHOLD = 20;
 	private static final float  WALL_AVOIDANCE_FORCE = 2;
 	private static final double TURN_RADIUS = 9.5; // Max degrees turned per timestep
 	private static final double YOLO_FACTOR = 0.5; // Scaling factor for tendency to ignore other planes near airport.
