@@ -69,9 +69,9 @@ public class AStarPlayer extends airplane.sim.Player {
 				Plane p = planes.get(i);
 				Deque<Waypoint> dq = paths.get(p);
 				
-				if (p.getDestination().equals(dq.peek().point)) dq.pop();
+				if (p.getLocation().equals(dq.peekLast().point)) dq.removeLast();
 				
-				bearings[i] = calculateBearing(p.getDestination(), (Point2D.Double) dq.peek().point);
+				bearings[i] = calculateBearing(p.getLocation(), (Point2D.Double) dq.peekLast().point);
 			}
 		}
 		
