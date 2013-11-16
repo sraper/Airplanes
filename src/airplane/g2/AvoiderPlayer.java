@@ -93,7 +93,7 @@ public class AvoiderPlayer extends airplane.sim.Player {
 	
 	private boolean planeTooClose(Plane p, ArrayList<Plane> planes) {
 		for (Plane o : planes) {
-			if (p != o && o.getBearing() != -1 && p.getLocation().distance(o.getLocation()) < 6) return true;
+			if (p != o && o.getBearing() >= 0 && p.getLocation().distance(o.getLocation()) < 6) return true;
 		}
 		return false;
 	}
