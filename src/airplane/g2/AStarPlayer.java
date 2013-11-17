@@ -16,7 +16,7 @@ public class AStarPlayer extends airplane.sim.Player {
 	
 	private static int count;
 	
-	private HashMap<Plane, Deque<Waypoint>> paths;
+	private HashMap<Plane, PlaneState> planeStates;
 	
 	@Override
 	public String getName() {
@@ -30,7 +30,7 @@ public class AStarPlayer extends airplane.sim.Player {
 	 */
 	@Override
 	public void startNewGame(ArrayList<Plane> planes) {
-		paths = new HashMap<Plane, Deque<Waypoint>>();
+    planeStates = new HashMap<Plane, PlaneState>();
 		count = 0;
 		logger.info("Starting new game!");
 	}
@@ -47,6 +47,10 @@ public class AStarPlayer extends airplane.sim.Player {
 		if(count % 5 == 0) {
 			Set<Line2D> walls = new HashSet<Line2D>();
 			for(Plane p : planes) {
+        PlaneState state = planeStates.get(p);
+        if (state == null) {
+          state = new PlaneState();
+        }
 				AStar astar = new AStar(walls);
 				Deque<Waypoint> dq = astar.AStarPath(p.getLocation(), p.getDestination());
 				
@@ -61,13 +65,14 @@ public class AStarPlayer extends airplane.sim.Player {
 					walls.add(new Line2D.Double(start, end));
 					start = wp[j].point;
 				}
-				
-				paths.put(p, dq);
+				state.path = dq;
+        planeStates.put(p, state);
 			}
 		} else {
 			for (int i = 0; i < planes.size(); i++) {
 				Plane p = planes.get(i);
-				Deque<Waypoint> dq = paths.get(p);
+        PlaneState state = planeStates.get(p);
+				Deque<Waypoint> dq = state.path;
 				
 				if (p.getLocation().equals(dq.peekLast().point)) dq.removeLast();
 				
@@ -78,6 +83,4 @@ public class AStarPlayer extends airplane.sim.Player {
 		count++;		
 		return bearings;
 	}
-	
-
 }

@@ -79,6 +79,7 @@ public class AStar {
 			addWaypoint(p2, triQuadOpp2, lines);
 		}
 		originalWaypointSet.addAll(waypointSet);
+    originalVisibilityMap.putAll(visibilityMap);
 	}
 
 	protected boolean isInLineOfSight(double x, double y, double newX,
@@ -161,6 +162,13 @@ public class AStar {
 
 	// A* path finding algo
 	public Deque<Waypoint> AStarPath(Point2D source, Point2D target) {
+    // if in line-of-sight, simply return path with target as a waypoint.
+    if (isInLineOfSight(source, target)) {
+      Waypoint targetWP = new Waypoint(target);
+      Deque<Waypoint> path = new ArrayDeque<Waypoint>();
+      path.addFirst(targetWP);
+      return path;
+    }
 		// revert to original waypointSet and visibilityMap
 		waypointSet = new HashSet<Waypoint>();
 		visibilityMap = new HashMap<Waypoint, Set<Waypoint>>();
