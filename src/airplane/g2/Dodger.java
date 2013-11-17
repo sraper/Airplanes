@@ -2,26 +2,36 @@ package airplane.g2;
 
 import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
-import airplane.sim.Plane;
+
+import airplane.sim.*;
 
 public class Dodger extends airplane.sim.Player {
 	private Logger logger = Logger.getLogger(this.getClass()); // for logging
 	
-	private HashMap<Plane, PlaneState> planeStates;
+	private Map<Integer, PlaneState> planeStates;
+	private Map<Integer, PlaneState> simulatedPlaneStates;
+  private Set<Line2D> walls;
+
+  private static final int FINISHED = -2;
+	private static final int WAITING = -1;
 
   // knobs
-  static final double maxBearingDeg = 10;
-  static final double collisionDistance = 5;
-  static final double velocity = 1;
+  private static final double maxBearingDeg = 9.5;
+  private static final double collisionDistance = 5;
+  private static final double velocity = 1;
 
   private double safetyDistance;
+  private boolean simulating;
+  private int currentPlane; // used while simulating
 	
 	@Override
 	public String getName() {
@@ -35,7 +45,9 @@ public class Dodger extends airplane.sim.Player {
 	 */
 	@Override
 	public void startNewGame(ArrayList<Plane> planes) {
-    planeStates = new HashMap<Plane, PlaneState>();
+    simulating = false;
+    planeStates = new HashMap<Integer, PlaneState>();
+    walls = new HashSet<Line2D>();
     double safetyDistanceHorizontal = 0;
     double safetyDistanceVertical = 0; // should increase to collisionDistance
     double safetyMoves = 0;
@@ -44,8 +56,7 @@ public class Dodger extends airplane.sim.Player {
     	safetyDistanceHorizontal += velocity * Math.cos(Math.toRadians(i));
     	safetyDistanceVertical += velocity * Math.sin(Math.toRadians(i));
       safetyMoves++;
-      if (safetyDistanceVertical > collisionDistance)
-      {
+      if (safetyDistanceVertical > collisionDistance) {
         break;
       }
     }
@@ -53,15 +64,23 @@ public class Dodger extends airplane.sim.Player {
       safetyMoves += Math.ceil((collisionDistance - safetyDistanceVertical)/velocity);
       safetyDistanceHorizontal += (safetyMoves * velocity);
     }
-    logger.info ("safetyMoves: " + safetyMoves 
+    logger.trace ("safetyMoves: " + safetyMoves 
         + " h: " + safetyDistanceHorizontal 
         + " v: " + safetyDistanceVertical); 
 
     safetyDistance = Math.ceil(safetyDistanceHorizontal) + (safetyMoves*velocity); // add distance covered by opposite plane
 
-    logger.info ("safety distance: " + safetyDistance); 
+    logger.trace ("safety distance: " + safetyDistance); 
 		logger.info("Starting new game!");
 	}
+
+  @Override
+  public double[] simulateUpdate (ArrayList<Plane> planes, int round, double[] bearings) {
+    simulating = true;
+    bearings = updatePlanes(planes, round, bearings);
+    simulating = false;
+    return bearings;
+  }
 	
 	/*
 	 * This is called at each step of the simulation.
@@ -71,6 +90,174 @@ public class Dodger extends airplane.sim.Player {
 	 */
 	@Override
 	public double[] updatePlanes(ArrayList<Plane> planes, int round, double[] bearings) {
+    boolean allDone = true;
+    boolean takeOff = false; // have to take-off one plane at a time
+
+    if (simulating == false) {
+      logger.info("round: " + round);
+    }
+
+    // save ids
+    if (round == 1 && simulating == false) {
+      for (int i = 0; i < planes.size(); i++) {
+        planes.get(i).id = i;
+      }
+    }
+
+    // TODO: sort planes
+    for (int i = 0; i < planes.size(); i++) {
+      Plane plane = planes.get(i);
+      PlaneState state;
+      Deque<Waypoint> path = null;
+
+      if (bearings[i] != FINISHED) {
+        allDone = false;
+      }
+
+      if (round < plane.getDepartureTime() || bearings[i] == FINISHED) {
+        // skip
+        continue;
+      } else if (bearings[i] == WAITING && simulating && i != currentPlane) {
+        logger.trace("not taking off plane: " + i + " in simulation" + " current plane: " + currentPlane);
+        // do not take-off any new planes in simulation except the currentPlane
+        continue;
+      }
+
+      if (simulating) {
+        logger.trace("get simulated state for plane: " + i);
+        state = simulatedPlaneStates.get(plane.id);
+      } else {
+        logger.trace("get state for plane: " + i);
+        state = planeStates.get(plane.id);
+        currentPlane = i; // set currentPlane placeholder
+        // reset walls, simulation runs with existing walls
+        walls = new HashSet<Line2D>();
+      }
+
+      if (state == null) {
+        if (simulating) {
+          logger.trace ("create new simulated state for plane: " + i);
+        } else {
+          logger.trace ("create new state for plane: " + i);
+        }
+        state = new PlaneState();
+      }
+
+      path = state.path;
+
+      if (path == null) { // need to choose path for this plane
+        logger.trace ("path is null for plane: " + i);
+        if (simulating == false) {
+          logger.trace("start simulation plane: " + currentPlane);
+          // detect collision points and place walls
+          SimulationResult result;
+          while(true) {
+            // make copies
+            simulatedPlaneStates = new HashMap<Integer, PlaneState>();
+            for (int k = 0; k < planes.size(); k++) {
+              PlaneState origState = planeStates.get(planes.get(k).id);
+              if (origState != null) {
+                PlaneState newState = new PlaneState();
+                if (origState.path != null) {
+                  logger.trace("copy to simulated state, path exists for plane: " + k);
+                  newState.path = new ArrayDeque<Waypoint>(origState.path);
+                }
+                newState.target = origState.target;
+                simulatedPlaneStates.put(planes.get(k).id, newState);
+              }
+            }
+
+            result = startSimulation(planes, round);
+            if (result.getReason() == SimulationResult.TOO_CLOSE) {
+              logger.info ("collision detected!");
+              ArrayList<Plane> simulatedPlanes = result.getPlanes();
+              // locate planes and add walls
+              for (int j = 0; j < simulatedPlanes.size(); j++) {
+                Plane simulatedPlane = simulatedPlanes.get(j);
+                Plane simulatedSelfPlane = simulatedPlanes.get(currentPlane);
+                if (currentPlane != j) {
+                  double distance = simulatedSelfPlane.getLocation().distance(simulatedPlane.getLocation());
+                  if (distance <= collisionDistance) {
+                    PlaneState simulatedPlaneState = simulatedPlaneStates.get(j);
+                    logger.info("create wall");
+                    // create wall here
+                    Vector alongPath = new Vector (simulatedPlane.getLocation(), 
+                        simulatedPlaneState.path.peekFirst().point);
+                    alongPath.normalize();
+                    alongPath.multiply(safetyDistance);
+                    Vector planeVector = new Vector (simulatedPlane.getLocation());
+                    Vector safetyPointVector = Vector.addVectors(planeVector, alongPath);
+                    Line2D wall = new Line2D.Double(simulatedPlane.getLocation(), safetyPointVector.getPoint());
+                    walls.add(wall);
+                  }
+                }
+              }
+            } else {
+              logger.info ("simulation end reason: " + result.getReason());
+              break;
+            }
+          } 
+        }
+        takeOff = true;
+
+        if (simulating)
+          logger.info("calculate a-star in simulation, plane " + i);
+        else
+          logger.info("calculate a-star, plane " + i);
+
+        AStar astar = new AStar(walls, collisionDistance);
+        path = astar.AStarPath(plane.getLocation(), plane.getDestination());
+        if (path == null) {
+          // destination is unreachable at this time. 
+          // some other plane is landing/taking-off?
+          continue;
+        }
+      }
+
+
+      Waypoint firstWaypoint = path.removeFirst();
+      if (plane.getLocation() == firstWaypoint.point) {
+        firstWaypoint = path.removeFirst();
+      }
+      /*
+      // check whether 2nd waypoint is visible
+      Waypoint secondWaypoint = path.peekFirst();
+      if (secondWaypoint != null) {
+        if (astar.isInLineOfSight(plane.getLocation(), secondWaypoint.point)) {
+          // reset to second waypoint in queue
+          firstWaypoint = path.removeFirst();
+        }
+      }*/
+      path.addFirst(firstWaypoint);
+
+      // head to first waypoint
+      logger.trace("plane " + i + " heading to: " + firstWaypoint.point);
+	    Vector currVec;
+      if (bearings[i] != WAITING) {
+        currVec = new Vector(bearings[i]);
+      } else {
+        currVec = new Vector(calculateBearing(plane.getLocation(), (Point2D.Double) firstWaypoint.point));
+      }
+      Vector goalVec = new Vector(calculateBearing(plane.getLocation(), (Point2D.Double) firstWaypoint.point));
+      bearings[i] = currVec.rotateToward(goalVec, maxBearingDeg).getBearing();
+
+      state.path = path;
+      if (simulating) {
+        logger.trace("updating simulate state for plane: " + i);
+        simulatedPlaneStates.put(plane.id, state);
+      } else {
+        logger.trace("updating state for plane: " + i);
+        planeStates.put(plane.id, state);
+      }
+      if (takeOff) {
+        break;
+      }
+    }
+    if ((allDone || bearings[currentPlane] == FINISHED) && simulating) {
+      logger.info("simulation stopped in round: " + round);
+      stopSimulation();
+    }
+
 		return bearings;
 	}
 }

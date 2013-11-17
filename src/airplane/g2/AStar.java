@@ -27,15 +27,16 @@ public class AStar {
 	
 	private Logger log = Logger.getLogger(this.getClass()); // for logging
 
-	public AStar(Set<Line2D> inwalls, int safetyDistance) {
-		this.walls = inwalls;
+	public AStar(Set<Line2D> inwalls, double safetyDistance) {
+    this.walls = new HashSet<Line2D>();
 		this.originalWaypointSet = new HashSet<Waypoint>();
 		this.waypointSet = new HashSet<Waypoint>();
 		this.visibilityMap = new HashMap<Waypoint, Set<Waypoint> >();
 		this.originalVisibilityMap = new HashMap<Waypoint, Set<Waypoint> >();
 		// init waypoints
-		for (Line2D wall : walls) {
-			log.trace("Wall at (" + wall.getX1() + ", " + wall.getY1()
+		for (Line2D wall : inwalls) {
+      this.walls.add(wall);
+			log.info("Wall at (" + wall.getX1() + ", " + wall.getY1()
 					+ ") to (" + wall.getX2() + ", " + wall.getY2() + ")");
 
 			Vector p1 = new Vector(wall.getP1());
@@ -59,15 +60,26 @@ public class AStar {
       Vector p22 = Vector.addVectors(p2, acw);
 
 			along.normalize();
-			along.multiply(waypointDist);
+			along.multiply(safetyDistance);
 			opposite.normalize();
-			opposite.multiply(waypointDist);
+			opposite.multiply(safetyDistance);
       
       addWaypoint(p11, along, lines);
       addWaypoint(p12, along, lines);
       addWaypoint(p21, opposite, lines);
       addWaypoint(p22, opposite, lines);
      
+      // Add 2 more walls
+      Line2D wall1 = new Line2D.Double(p11.getPoint(), p21.getPoint());
+      Line2D wall2 = new Line2D.Double(p12.getPoint(), p22.getPoint());
+      this.walls.add(wall1);
+      this.walls.add(wall2);
+			log.info("Wall at (" + wall1.getX1() + ", " + wall1.getY1()
+					+ ") to (" + wall1.getX2() + ", " + wall1.getY2() + ")");
+
+			log.info("Wall at (" + wall2.getX1() + ", " + wall2.getY1()
+					+ ") to (" + wall2.getX2() + ", " + wall2.getY2() + ")");
+
 
       /*along.normalize();
 			along.multiply(waypointDist);

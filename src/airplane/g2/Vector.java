@@ -32,10 +32,10 @@ public class Vector
   public void normalize()
   {
     float vectorLength = length();
-    x = (float) (.99*x/vectorLength);
-    y = (float) (.99*y/vectorLength);
+    x = (float) (x/vectorLength);
+    y = (float) (y/vectorLength);
   }
-  public void multiply(float factor)
+  public void multiply(double factor)
   {
     x = factor*x;
     y = factor*y;
