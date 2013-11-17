@@ -337,9 +337,9 @@ public class AStar {
 				|| point.getY() < 0)
 			return null;
     // do not add if near wall
-    Point2D wallPoint = getNearWallPoint(point, safetyDistance);
+    /*Point2D wallPoint = getNearWallPoint(point, safetyDistance);
     if (wallPoint != null && !orificeWaypoint)
-      return null;
+      return null;*/
 		Waypoint retVal = addToVisibilityMap(point, orificeWaypoint);
 		waypointSet.add(retVal);
     log.trace("waypoint at: " + retVal.point);
