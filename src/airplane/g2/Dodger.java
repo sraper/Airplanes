@@ -25,7 +25,7 @@ public class Dodger extends airplane.sim.Player {
 	private static final int WAITING = -1;
 
   // knobs
-  private static final double maxBearingDeg = 9.8;
+  private static final double maxBearingDeg = 9.9;
   private static final double collisionDistance = 5;
   private static final double velocity = 1;
 
@@ -56,7 +56,7 @@ public class Dodger extends airplane.sim.Player {
     	safetyDistanceHorizontal += velocity * Math.cos(Math.toRadians(i));
     	safetyDistanceVertical += velocity * Math.sin(Math.toRadians(i));
       safetyMoves++;
-      if (safetyDistanceVertical > collisionDistance) {
+      if (safetyDistanceVertical >= collisionDistance) {
         break;
       }
     }
@@ -64,13 +64,12 @@ public class Dodger extends airplane.sim.Player {
       safetyMoves += Math.ceil((collisionDistance - safetyDistanceVertical)/velocity);
       safetyDistanceHorizontal += (safetyMoves * velocity);
     }
-    logger.trace ("safetyMoves: " + safetyMoves 
+    logger.info ("safetyMoves: " + safetyMoves 
         + " h: " + safetyDistanceHorizontal 
         + " v: " + safetyDistanceVertical); 
 
     safetyDistance = Math.ceil(safetyDistanceHorizontal) + (safetyMoves*velocity); // add distance covered by opposite plane
-
-    logger.trace ("safety distance: " + safetyDistance); 
+    logger.info ("safety distance: " + safetyDistance);
 		logger.info("Starting new game!");
 	}
 
@@ -103,7 +102,11 @@ public class Dodger extends airplane.sim.Player {
     // save ids
     if (round == 1 && simulating == false) {
       for (int i = 0; i < planes.size(); i++) {
-        planes.get(i).id = i;
+        Plane plane = planes.get(i);
+        plane.id = i;
+        logger.info("init plane, location: " + plane.getLocation()
+            + " destination: " + plane.getDestination()
+            + " departure: " + plane.getDepartureTime());
       }
     }
 
@@ -227,7 +230,7 @@ public class Dodger extends airplane.sim.Player {
         else
           logger.trace("calculate a-star, plane " + i);
 
-        AStar astar = new AStar(walls, collisionDistance + 1);
+        AStar astar = new AStar(walls, collisionDistance + 2);
         path = astar.AStarPath(plane.getLocation(), plane.getDestination());
         if (path == null) {
            logger.trace("plane: " + i + "can't take off yet");

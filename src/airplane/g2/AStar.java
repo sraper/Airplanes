@@ -59,17 +59,7 @@ public class AStar {
       Vector p21 = Vector.addVectors(p2, cw);
       Vector p22 = Vector.addVectors(p2, acw);
 
-			along.normalize();
-			along.multiply(safetyDistance);
-			opposite.normalize();
-			opposite.multiply(safetyDistance);
-      
-      addWaypoint(p11, along, lines);
-      addWaypoint(p12, along, lines);
-      addWaypoint(p21, opposite, lines);
-      addWaypoint(p22, opposite, lines);
-
-      // Add 2 more walls
+      // Add 2 more walls parallel
       Line2D wall1 = new Line2D.Double(p11.getPoint(), p21.getPoint());
       Line2D wall2 = new Line2D.Double(p12.getPoint(), p22.getPoint());
       this.walls.add(wall1);
@@ -80,6 +70,25 @@ public class AStar {
 			log.trace("Wall at (" + wall2.getX1() + ", " + wall2.getY1()
 					+ ") to (" + wall2.getX2() + ", " + wall2.getY2() + ")");
 
+      // Add 2 perpendicular walls to enclose the no-fly zone
+      Line2D wall3 = new Line2D.Double(p11.getPoint(), p12.getPoint());
+      Line2D wall4 = new Line2D.Double(p21.getPoint(), p22.getPoint());
+			log.trace("Wall at (" + wall3.getX1() + ", " + wall3.getY1()
+					+ ") to (" + wall3.getX2() + ", " + wall3.getY2() + ")");
+
+			log.trace("Wall at (" + wall4.getX1() + ", " + wall4.getY1()
+					+ ") to (" + wall4.getX2() + ", " + wall4.getY2() + ")");
+
+      // add waypoints
+			along.normalize();
+			along.multiply(safetyDistance);
+			opposite.normalize();
+			opposite.multiply(safetyDistance);
+      
+      addWaypoint(p11, along, lines);
+      addWaypoint(p12, along, lines);
+      addWaypoint(p21, opposite, lines);
+      addWaypoint(p22, opposite, lines);
 
       /*along.normalize();
 			along.multiply(waypointDist);
