@@ -20,14 +20,14 @@ public class AStar {
 	private Map<Waypoint, Set<Waypoint> > originalVisibilityMap;
 	
 	private ArrayList<Line2D> lines = new ArrayList<Line2D>();
-	
-	static int waypointDist = 2;
+
+	static int waypointDist = 1;
 	static int starDist = 1;
 	static double invalidWaypointDist = 1;
 	
 	private Logger log = Logger.getLogger(this.getClass()); // for logging
 
-	public AStar(Set<Line2D> inwalls) {
+	public AStar(Set<Line2D> inwalls, int safetyDistance) {
 		this.walls = inwalls;
 		this.originalWaypointSet = new HashSet<Waypoint>();
 		this.waypointSet = new HashSet<Waypoint>();
@@ -37,27 +37,39 @@ public class AStar {
 		for (Line2D wall : walls) {
 			log.trace("Wall at (" + wall.getX1() + ", " + wall.getY1()
 					+ ") to (" + wall.getX2() + ", " + wall.getY2() + ")");
-			/*
-			 * initializeVisibilityMap(wall.getP1());
-			 * initializeVisibilityMap(wall.getP2());
-			 */
 
 			Vector p1 = new Vector(wall.getP1());
 			Vector p2 = new Vector(wall.getP2());
 			Vector lineTangent = new Vector(wall.getP2(), wall.getP1());
 			lineTangent.normalize();
-			lineTangent.multiply(starDist);
+			lineTangent.multiply(safetyDistance);
 			Vector along = lineTangent;
 			Vector opposite = lineTangent.rotateOpposite();
 			Vector cw = lineTangent.rotate90Clockwise();
 			Vector acw = lineTangent.rotate90AntiClockwise();
 
-			Vector triQuad1 = lineTangent.rotate(120);
+			/*Vector triQuad1 = lineTangent.rotate(120);
 			Vector triQuad2 = lineTangent.rotate(-120);
 			Vector triQuadOpp1 = opposite.rotate(120);
-			Vector triQuadOpp2 = opposite.rotate(-120);
+			Vector triQuadOpp2 = opposite.rotate(-120);*/
+
+      Vector p11 = Vector.addVectors(p1, cw);
+      Vector p12 = Vector.addVectors(p1, acw);
+      Vector p21 = Vector.addVectors(p2, cw);
+      Vector p22 = Vector.addVectors(p2, acw);
 
 			along.normalize();
+			along.multiply(waypointDist);
+			opposite.normalize();
+			opposite.multiply(waypointDist);
+      
+      addWaypoint(p11, along, lines);
+      addWaypoint(p12, along, lines);
+      addWaypoint(p21, opposite, lines);
+      addWaypoint(p22, opposite, lines);
+     
+
+      /*along.normalize();
 			along.multiply(waypointDist);
 			opposite.normalize();
 			opposite.multiply(waypointDist);
@@ -76,7 +88,7 @@ public class AStar {
 
 			addWaypoint(p2, opposite, lines);
 			addWaypoint(p2, triQuadOpp1, lines);
-			addWaypoint(p2, triQuadOpp2, lines);
+			addWaypoint(p2, triQuadOpp2, lines);*/
 		}
 		originalWaypointSet.addAll(waypointSet);
     originalVisibilityMap.putAll(visibilityMap);
@@ -94,17 +106,6 @@ public class AStar {
 	
 	protected boolean isInLineOfSight(Point2D p1, Point2D p2) {
 		return isInLineOfSight(p1.getX(), p1.getY(), p2.getX(), p2.getY());
-	}
-
-	Point2D getNearWallPoint(Point2D point, double minDistance) {
-		for (Line2D wall : walls) {
-			if (point.distance(wall.getP1()) < minDistance) {
-				return wall.getP1();
-			} else if (point.distance(wall.getP2()) < minDistance) {
-				return wall.getP2();
-			}
-		}
-		return null;
 	}
 
 	boolean checkOnWall(Point2D point) {
@@ -150,9 +151,6 @@ public class AStar {
 		if (point.getX() > 100 || point.getX() < 0 || point.getY() > 100
 				|| point.getY() < 0)
 			return null;
-		// do not add if near wall
-		Point2D wallPoint = getNearWallPoint(point, invalidWaypointDist);
-		// initializeVisibilityMap(point);
 		Waypoint retVal = addToVisibilityMap(point);
 		waypointSet.add(retVal);
 		line = new Line2D.Double(p.getPoint(), point);
@@ -162,6 +160,7 @@ public class AStar {
 
 	// A* path finding algo
 	public Deque<Waypoint> AStarPath(Point2D source, Point2D target) {
+    log.trace ("source: " + source + " target: " + target);
     // if in line-of-sight, simply return path with target as a waypoint.
     if (isInLineOfSight(source, target)) {
       Waypoint targetWP = new Waypoint(target);
@@ -196,6 +195,7 @@ public class AStar {
 			// Check if unreachable
 			if (waypointCurrent == null) {
 				cleanupWaypoints(waypointSet);
+        log.trace("Unreachable target!");
 				return null;
 			}
 			// Move towards waypointTarget

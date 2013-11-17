@@ -51,7 +51,7 @@ public class AStarPlayer extends airplane.sim.Player {
         if (state == null) {
           state = new PlaneState();
         }
-				AStar astar = new AStar(walls);
+				AStar astar = new AStar(walls, 5);
 				Deque<Waypoint> dq = astar.AStarPath(p.getLocation(), p.getDestination());
 				
 				// need to shorten paths to a small subsection
