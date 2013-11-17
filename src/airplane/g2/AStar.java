@@ -25,10 +25,6 @@ public class AStar {
 	
 	private ArrayList<Line2D> lines = new ArrayList<Line2D>();
 
-	static int waypointDist = 1;
-	static int starDist = 1;
-	static double invalidWaypointDist = 1;
-	
 	private Logger log = Logger.getLogger(this.getClass()); // for logging
 
 	public AStar(Set<Line2D> inwalls, double sDistance) {
@@ -88,11 +84,6 @@ public class AStar {
 					+ ") to (" + wall4.getX2() + ", " + wall4.getY2() + ")");
 
       // add waypoints
-			along.normalize();
-			along.multiply(safetyDistance);
-			opposite.normalize();
-			opposite.multiply(safetyDistance);
-      
       addWaypoint(p11, along, lines, false);
       addWaypoint(p12, along, lines, false);
       addWaypoint(p21, opposite, lines, false);
@@ -145,7 +136,7 @@ public class AStar {
               Waypoint waypoint = addToVisibilityMap(point, true);
               Vector lineTangent = new Vector(point11, point21);
               lineTangent.normalize();
-              lineTangent.multiply(starDist);
+              lineTangent.multiply(safetyDistance);
               Vector along = lineTangent;
               Vector opposite = lineTangent.rotateOpposite();
               Vector cw = lineTangent.rotate90Clockwise();
@@ -165,7 +156,7 @@ public class AStar {
               Waypoint waypoint = addToVisibilityMap(point, true);
               Vector lineTangent = new Vector(point11, point22);
               lineTangent.normalize();
-              lineTangent.multiply(starDist);
+              lineTangent.multiply(safetyDistance);
               Vector along = lineTangent;
               Vector opposite = lineTangent.rotateOpposite();
               Vector cw = lineTangent.rotate90Clockwise();
@@ -185,7 +176,7 @@ public class AStar {
               Waypoint waypoint = addToVisibilityMap(point, true);
               Vector lineTangent = new Vector(point12, point21);
               lineTangent.normalize();
-              lineTangent.multiply(starDist);
+              lineTangent.multiply(safetyDistance);
               Vector along = lineTangent;
               Vector opposite = lineTangent.rotateOpposite();
               Vector cw = lineTangent.rotate90Clockwise();
@@ -205,7 +196,7 @@ public class AStar {
               Waypoint waypoint = addToVisibilityMap(point, true);
               Vector lineTangent = new Vector(point12, point22);
               lineTangent.normalize();
-              lineTangent.multiply(starDist);
+              lineTangent.multiply(safetyDistance);
               Vector along = lineTangent;
               Vector opposite = lineTangent.rotateOpposite();
               Vector cw = lineTangent.rotate90Clockwise();
@@ -338,7 +329,7 @@ public class AStar {
 				|| point.getY() < 0)
 			return null;
     // do not add if near wall
-    Point2D wallPoint = getNearWallPoint(point, invalidWaypointDist);
+    Point2D wallPoint = getNearWallPoint(point, safetyDistance);
     if (wallPoint != null && !orificeWaypoint)
       return null;
 		Waypoint retVal = addToVisibilityMap(point, orificeWaypoint);
