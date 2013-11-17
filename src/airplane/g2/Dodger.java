@@ -208,7 +208,7 @@ public class Dodger extends airplane.sim.Player {
         else
           logger.info("calculate a-star, plane " + i);
 
-        AStar astar = new AStar(walls, collisionDistance);
+        AStar astar = new AStar(walls, collisionDistance + 1);
         path = astar.AStarPath(plane.getLocation(), plane.getDestination());
         if (path == null) {
            logger.info("plane: " + i + "can't take off yet");
