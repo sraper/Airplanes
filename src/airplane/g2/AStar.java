@@ -14,13 +14,13 @@ import org.apache.log4j.Logger;
 
 public class AStar {
 	private Set<Line2D> walls;
-  private Set<Line2D> orificeSet;
+  //private Set<Line2D> orificeSet;
 	private Set<Waypoint> waypointSet;
 	private Set<Waypoint> originalWaypointSet;
 	private Map<Waypoint, Set<Waypoint> > visibilityMap;
 	private Map<Waypoint, Set<Waypoint> > originalVisibilityMap;
-  private Set<Waypoint> orificeWaypointSet;
-  private boolean checkOrifice = true;
+  //private Set<Waypoint> orificeWaypointSet;
+  //private boolean checkOrifice = true;
   private double safetyDistance;
 	
 	private ArrayList<Line2D> lines = new ArrayList<Line2D>();
@@ -30,11 +30,11 @@ public class AStar {
 	public AStar(Set<Line2D> inwalls, double sDistance) {
     this.walls = new HashSet<Line2D>();
 		this.originalWaypointSet = new HashSet<Waypoint>();
-    this.orificeWaypointSet = new HashSet<Waypoint> ();
+    //this.orificeWaypointSet = new HashSet<Waypoint> ();
 		this.waypointSet = new HashSet<Waypoint>();
 		this.visibilityMap = new HashMap<Waypoint, Set<Waypoint> >();
 		this.originalVisibilityMap = new HashMap<Waypoint, Set<Waypoint> >();
-    this.orificeSet = new HashSet<Line2D> ();
+    //this.orificeSet = new HashSet<Line2D> ();
     this.safetyDistance = sDistance;
 
 		// init waypoints
@@ -63,7 +63,18 @@ public class AStar {
       Vector p21 = Vector.addVectors(p2, cw);
       Vector p22 = Vector.addVectors(p2, acw);
 
-      // Add 2 more walls parallel
+      along.normalize();
+      along.multiply(safetyDistance);
+      opposite.normalize();
+      opposite.multiply(safetyDistance);
+
+      // add waypoints
+      addWaypoint(p11, along, lines, false);
+      addWaypoint(p12, along, lines, false);
+      addWaypoint(p21, opposite, lines, false);
+      addWaypoint(p22, opposite, lines, false);
+
+      // Add 2 more parallel walls
       Line2D wall1 = new Line2D.Double(p11.getPoint(), p21.getPoint());
       Line2D wall2 = new Line2D.Double(p12.getPoint(), p22.getPoint());
       this.walls.add(wall1);
@@ -82,12 +93,9 @@ public class AStar {
 
 			log.trace("Wall at (" + wall4.getX1() + ", " + wall4.getY1()
 					+ ") to (" + wall4.getX2() + ", " + wall4.getY2() + ")");
+      this.walls.add(wall3);
+      this.walls.add(wall4);
 
-      // add waypoints
-      addWaypoint(p11, along, lines, false);
-      addWaypoint(p12, along, lines, false);
-      addWaypoint(p21, opposite, lines, false);
-      addWaypoint(p22, opposite, lines, false);
 
       /*along.normalize();
 			along.multiply(waypointDist);
@@ -112,7 +120,7 @@ public class AStar {
 		}
 		originalWaypointSet.addAll(waypointSet);
     //remember orifice lines
-    Set<Point2D> consideredPoints = new HashSet<Point2D>();
+    /*Set<Point2D> consideredPoints = new HashSet<Point2D>();
     checkOrifice = false;
     for (Line2D line1 : walls)
     {
@@ -210,7 +218,7 @@ public class AStar {
       }
     }
     checkOrifice = true;
-    orificeWaypointSet.addAll(waypointSet);
+    orificeWaypointSet.addAll(waypointSet);*/
     originalVisibilityMap.putAll(visibilityMap);
 	}
 
@@ -221,14 +229,14 @@ public class AStar {
 			if (l.intersectsLine(pathLine))
 				return false;
 		}
-   if (checkOrifice) {
+   /*if (checkOrifice) {
       // check orifice: make opaque
       Point2D point1 = new Point2D.Double(x, y);
       Point2D point2 = new Point2D.Double(newX, newY);
       if (checkSweep(point1, point2) || checkSweep(point2, point1)) {
         return false;
       }
-   }
+   }*/
 		return true;
 	}
 
@@ -369,10 +377,11 @@ public class AStar {
 		// revert to original waypointSet and visibilityMap
 		waypointSet = new HashSet<Waypoint>();
 		visibilityMap = new HashMap<Waypoint, Set<Waypoint>>();
-    if (checkOrifice)
+    //if (checkOrifice)
       waypointSet.addAll(originalWaypointSet);
-    else
-      waypointSet.addAll(orificeWaypointSet);
+    /*else
+        waypointSet.addAll(orificeWaypointSet);*/
+
 		visibilityMap.putAll(originalVisibilityMap);
 		// add target to visibilityMap and waypointSet
 		Waypoint waypointTarget = addToVisibilityMap(target, false);
@@ -402,7 +411,7 @@ public class AStar {
 			// Move towards waypointTarget
 			Set<Waypoint> visibleWaypoints = visibilityMap.get(waypointCurrent);
 			for (Waypoint waypoint : visibleWaypoints) {
-				if (!waypoint.closedList && (!waypoint.orificeWaypoint || !checkOrifice)
+				if (!waypoint.closedList && (!waypoint.orificeWaypoint /*|| !checkOrifice*/)
 						&& /* fail safe condition */waypoint != waypointCurrent) {
 					double newDistance = waypointCurrent.currentSourceDistance
 							+ Waypoint.getDistance(waypointCurrent, waypoint);
