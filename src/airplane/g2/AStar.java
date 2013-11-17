@@ -36,7 +36,7 @@ public class AStar {
 		// init waypoints
 		for (Line2D wall : inwalls) {
       this.walls.add(wall);
-			log.info("Wall at (" + wall.getX1() + ", " + wall.getY1()
+			log.trace("Wall at (" + wall.getX1() + ", " + wall.getY1()
 					+ ") to (" + wall.getX2() + ", " + wall.getY2() + ")");
 
 			Vector p1 = new Vector(wall.getP1());
@@ -74,10 +74,10 @@ public class AStar {
       Line2D wall2 = new Line2D.Double(p12.getPoint(), p22.getPoint());
       this.walls.add(wall1);
       this.walls.add(wall2);
-			log.info("Wall at (" + wall1.getX1() + ", " + wall1.getY1()
+			log.trace("Wall at (" + wall1.getX1() + ", " + wall1.getY1()
 					+ ") to (" + wall1.getX2() + ", " + wall1.getY2() + ")");
 
-			log.info("Wall at (" + wall2.getX1() + ", " + wall2.getY1()
+			log.trace("Wall at (" + wall2.getX1() + ", " + wall2.getY1()
 					+ ") to (" + wall2.getX2() + ", " + wall2.getY2() + ")");
 
 
@@ -165,7 +165,7 @@ public class AStar {
 			return null;
 		Waypoint retVal = addToVisibilityMap(point);
 		waypointSet.add(retVal);
-    log.info("waypoint at: " + retVal.point);
+    log.trace("waypoint at: " + retVal.point);
 		line = new Line2D.Double(p.getPoint(), point);
 		lines.add(line);
 		return retVal;

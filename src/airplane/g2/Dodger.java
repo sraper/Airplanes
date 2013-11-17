@@ -92,9 +92,10 @@ public class Dodger extends airplane.sim.Player {
 	public double[] updatePlanes(ArrayList<Plane> planes, int round, double[] bearings) {
     boolean allDone = true;
     boolean takeOff = false; // have to take-off one plane at a time
+    boolean wait = false;
 
     if (simulating == false) {
-      logger.info("round: " + round);
+      logger.trace("round: " + round);
     } else {
       logger.trace("simulating round: " + round);
     }
@@ -170,7 +171,7 @@ public class Dodger extends airplane.sim.Player {
             }
             result = startSimulation(planes, round);
             if (result.getReason() == SimulationResult.TOO_CLOSE) {
-              logger.info ("collision detected!");
+              logger.trace ("collision detected!");
               ArrayList<Plane> simulatedPlanes = result.getPlanes();
               // locate planes and add walls
               for (int j = 0; j < simulatedPlanes.size(); j++) {
@@ -180,41 +181,59 @@ public class Dodger extends airplane.sim.Player {
                   double distance = simulatedSelfPlane.getLocation().distance(simulatedPlane.getLocation());
                   if (distance <= collisionDistance) {
                     PlaneState simulatedPlaneState = simulatedPlaneStates.get(j);
-                    logger.info("collision!" 
-                        + " plane1: " + simulatedSelfPlane.getLocation()
-                        + " plane2: " + simulatedPlane.getLocation());
-                    // create wall here
-                    Vector alongPath = new Vector (simulatedPlane.getLocation(), 
-                        simulatedPlaneState.path.peekFirst().point);
-                    alongPath.normalize();
-                    alongPath.multiply(safetyDistance);
-                    Vector planeVector = new Vector (simulatedPlane.getLocation());
-                    Vector safetyPointVector = Vector.addVectors(planeVector, alongPath);
-                    Line2D wall = new Line2D.Double(simulatedPlane.getLocation(), safetyPointVector.getPoint());
-                    walls.add(wall);
+                    if (simulatedPlaneState != null) {
+                      logger.trace("collision!" 
+                          + " plane1: " + simulatedSelfPlane.getLocation()
+                          + " plane2: " + simulatedPlane.getLocation());
+                      // create wall here
+                      Vector alongPath = new Vector (simulatedPlane.getLocation(), 
+                          simulatedPlaneState.path.peekFirst().point);
+                      alongPath.normalize();
+                      alongPath.multiply(safetyDistance);
+                      Vector planeVector = new Vector (simulatedPlane.getLocation());
+                      Vector safetyPointVector = Vector.addVectors(planeVector, alongPath);
+                      Line2D wall = new Line2D.Double(simulatedPlane.getLocation(), safetyPointVector.getPoint());
+                      // check if we are getting the same collision again
+                      for (Line2D wall2: walls) {
+                        if ((wall.getP1().equals(wall2.getP1()) && wall.getP2().equals(wall2.getP2()))
+                            || (wall.getP1().equals(wall2.getP2()) && wall.getP2().equals(wall2.getP1()))) {
+                          logger.trace("detect same collision twice. skip plane.");
+                          wait = true;
+                        } 
+                      }
+                      walls.add(wall);
+                    }
                   }
                 }
               }
+              if (wait == true)
+                break;
             } else {
-              logger.info ("simulation end reason: " + result.getReason());
+              logger.trace ("simulation end reason: " + result.getReason());
               break;
             }
           } 
         }
+
+        if (wait == true) {
+          logger.trace ("destination unreachable for plane " + i);
+          continue;
+        }
+
         takeOff = true;
 
         if (simulating)
-          logger.info("calculate a-star in simulation, plane " + i);
+          logger.trace("calculate a-star in simulation, plane " + i);
         else
-          logger.info("calculate a-star, plane " + i);
+          logger.trace("calculate a-star, plane " + i);
 
         AStar astar = new AStar(walls, collisionDistance + 1);
         path = astar.AStarPath(plane.getLocation(), plane.getDestination());
         if (path == null) {
-           logger.info("plane: " + i + "can't take off yet");
+           logger.trace("plane: " + i + "can't take off yet");
           if (simulating == true) {
             if (i == currentPlane) {
-              logger.info("simulated plane can't take off yet. stop simulation.");
+              logger.trace("simulated plane can't take off yet. stop simulation.");
               // can't take-off yet. try later
               stopSimulation();
             }
@@ -228,7 +247,7 @@ public class Dodger extends airplane.sim.Player {
 
       Waypoint firstWaypoint = path.peekFirst();
       if (plane.getLocation().distance(firstWaypoint.point) < collisionDistance) {
-        logger.info("plane: " + plane + " reached waypoint: " + firstWaypoint.point);
+        logger.trace("plane: " + i + " reached waypoint: " + firstWaypoint.point);
         if (path.size() > 1) { // keep the last element
           path.removeFirst();
           firstWaypoint = path.peekFirst();
@@ -236,7 +255,7 @@ public class Dodger extends airplane.sim.Player {
       }
 
       // head to first waypoint
-      logger.info("plane " + i + " heading to: " + firstWaypoint.point
+      logger.trace("plane " + i + " heading to: " + firstWaypoint.point
           + " current location: " + plane.getLocation());
 	    Vector currVec;
       if (bearings[i] != WAITING) {
@@ -256,12 +275,12 @@ public class Dodger extends airplane.sim.Player {
         planeStates.put(plane.id, state);
       }
       if (takeOff) {
-        logger.info("take-off plane: " + i);
+        logger.trace("take-off plane: " + i);
         break;
       }
     }
     if ((allDone || bearings[currentPlane] == FINISHED) && simulating) {
-      logger.info("simulation stopped in round: " + round);
+      logger.trace("simulation stopped in round: " + round);
       stopSimulation();
     }
 
