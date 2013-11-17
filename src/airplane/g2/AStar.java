@@ -68,7 +68,7 @@ public class AStar {
       addWaypoint(p12, along, lines);
       addWaypoint(p21, opposite, lines);
       addWaypoint(p22, opposite, lines);
-     
+
       // Add 2 more walls
       Line2D wall1 = new Line2D.Double(p11.getPoint(), p21.getPoint());
       Line2D wall2 = new Line2D.Double(p12.getPoint(), p22.getPoint());
@@ -165,6 +165,7 @@ public class AStar {
 			return null;
 		Waypoint retVal = addToVisibilityMap(point);
 		waypointSet.add(retVal);
+    log.info("waypoint at: " + retVal.point);
 		line = new Line2D.Double(p.getPoint(), point);
 		lines.add(line);
 		return retVal;

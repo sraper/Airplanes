@@ -25,7 +25,7 @@ public class Dodger extends airplane.sim.Player {
 	private static final int WAITING = -1;
 
   // knobs
-  private static final double maxBearingDeg = 9.5;
+  private static final double maxBearingDeg = 10;
   private static final double collisionDistance = 5;
   private static final double velocity = 1;
 
@@ -95,6 +95,8 @@ public class Dodger extends airplane.sim.Player {
 
     if (simulating == false) {
       logger.info("round: " + round);
+    } else {
+      logger.trace("simulating round: " + round);
     }
 
     // save ids
@@ -166,7 +168,6 @@ public class Dodger extends airplane.sim.Player {
                 simulatedPlaneStates.put(planes.get(k).id, newState);
               }
             }
-
             result = startSimulation(planes, round);
             if (result.getReason() == SimulationResult.TOO_CLOSE) {
               logger.info ("collision detected!");
@@ -179,7 +180,9 @@ public class Dodger extends airplane.sim.Player {
                   double distance = simulatedSelfPlane.getLocation().distance(simulatedPlane.getLocation());
                   if (distance <= collisionDistance) {
                     PlaneState simulatedPlaneState = simulatedPlaneStates.get(j);
-                    logger.info("create wall");
+                    logger.info("collision!" 
+                        + " plane1: " + simulatedSelfPlane.getLocation()
+                        + " plane2: " + simulatedPlane.getLocation());
                     // create wall here
                     Vector alongPath = new Vector (simulatedPlane.getLocation(), 
                         simulatedPlaneState.path.peekFirst().point);
@@ -208,6 +211,14 @@ public class Dodger extends airplane.sim.Player {
         AStar astar = new AStar(walls, collisionDistance);
         path = astar.AStarPath(plane.getLocation(), plane.getDestination());
         if (path == null) {
+           logger.info("plane: " + i + "can't take off yet");
+          if (simulating == true) {
+            if (i == currentPlane) {
+              logger.info("simulated plane can't take off yet. stop simulation.");
+              // can't take-off yet. try later
+              stopSimulation();
+            }
+          }
           // destination is unreachable at this time. 
           // some other plane is landing/taking-off?
           continue;
@@ -215,23 +226,18 @@ public class Dodger extends airplane.sim.Player {
       }
 
 
-      Waypoint firstWaypoint = path.removeFirst();
-      if (plane.getLocation() == firstWaypoint.point) {
-        firstWaypoint = path.removeFirst();
-      }
-      /*
-      // check whether 2nd waypoint is visible
-      Waypoint secondWaypoint = path.peekFirst();
-      if (secondWaypoint != null) {
-        if (astar.isInLineOfSight(plane.getLocation(), secondWaypoint.point)) {
-          // reset to second waypoint in queue
-          firstWaypoint = path.removeFirst();
+      Waypoint firstWaypoint = path.peekFirst();
+      if (plane.getLocation().distance(firstWaypoint.point) < collisionDistance) {
+        logger.info("plane: " + plane + " reached waypoint: " + firstWaypoint.point);
+        if (path.size() > 1) { // keep the last element
+          path.removeFirst();
+          firstWaypoint = path.peekFirst();
         }
-      }*/
-      path.addFirst(firstWaypoint);
+      }
 
       // head to first waypoint
-      logger.trace("plane " + i + " heading to: " + firstWaypoint.point);
+      logger.info("plane " + i + " heading to: " + firstWaypoint.point
+          + " current location: " + plane.getLocation());
 	    Vector currVec;
       if (bearings[i] != WAITING) {
         currVec = new Vector(bearings[i]);
@@ -250,6 +256,7 @@ public class Dodger extends airplane.sim.Player {
         planeStates.put(plane.id, state);
       }
       if (takeOff) {
+        logger.info("take-off plane: " + i);
         break;
       }
     }
