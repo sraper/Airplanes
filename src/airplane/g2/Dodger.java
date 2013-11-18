@@ -170,10 +170,7 @@ public class Dodger extends airplane.sim.Player {
                 PlaneState newState = new PlaneState();
                 if (origState.path != null) {
                   logger.trace("copy to simulated state, path exists for plane: " + k);
-                  newState.path = new ArrayDeque<Waypoint>();
-                  for (Waypoint waypoint: origState.path) {
-                    newState.path.add(waypoint);
-                  }
+                  newState.path = new ArrayDeque<Waypoint>(origState.path);
                 }
                 newState.target = origState.target;
                 simulatedPlaneStates.put(planes.get(k).id, newState);
@@ -200,11 +197,11 @@ public class Dodger extends airplane.sim.Player {
                 if (currentPlane != j) {
                   double distance = simulatedSelfPlane.getLocation().distance(simulatedPlane.getLocation());
                   if (distance <= collisionDistance) {
-                    PlaneState simulatedPlaneState = simulatedPlaneStates.get(j);
+                    PlaneState simulatedPlaneState = simulatedPlaneStates.get(simulatedPlane.id);
                     if (simulatedPlaneState != null) {
-                      logger.trace("collision!" 
-                          + " plane1: " + simulatedSelfPlane.getLocation()
-                          + " plane2: " + simulatedPlane.getLocation());
+                      logger.info("collision!" 
+                          + " plane " + currentPlane + ": " + simulatedSelfPlane.getLocation()
+                          + " plane " + j + ": " + simulatedPlane.getLocation());
                       // create wall here
                       Vector alongPath = new Vector (simulatedPlane.getLocation(), 
                           simulatedPlaneState.path.peekFirst().point);
@@ -231,80 +228,92 @@ public class Dodger extends airplane.sim.Player {
                 // added no new walls, abort
                 wait = true;
               }
-
               if (wait == true)
                 break;
+
             } else if (result.getReason() == SimulationResult.STOPPED || result.getReason() == SimulationResult.NORMAL) {
               logger.trace ("simulation end reason: " + result.getReason());
               break;
-            }else {
+            } else {
               wait = true;
               logger.trace ("simulation end reason: " + result.getReason());
               break;
             }
-          } 
+          }
+          if (wait == true) {
+            logger.trace ("destination unreachable for plane " + i);
+            continue;
+          }
+
+          // path is available, retrieve from simulated state
+          logger.info("no collisions detected. retrieving path for plane: " + i);
+          ArrayList<Plane> simulatedPlanes = result.getPlanes();
+          Plane simulatedSelfPlane = simulatedPlanes.get(currentPlane);
+          PlaneState simulatedPlaneState = simulatedPlaneStates.get(simulatedSelfPlane.id);
+          if (simulatedPlaneState != null) { 
+            path = simulatedPlaneState.fullPath;
+            state.path = path;
+            state.fullPath = new ArrayDeque<Waypoint>(path);
+            takeOff = true;
+          } else {
+            wait = true;
+            continue;
+          }
         }
-
-        if (wait == true) {
-          logger.trace ("destination unreachable for plane " + i);
-          continue;
-        }
-
-        takeOff = true;
-
-        if (simulating)
-          logger.trace("calculate a-star in simulation, plane " + i);
-        else
-          logger.trace("calculate a-star, plane " + i);
-
-        AStar astar = new AStar(walls, collisionDistance + 2);
-        path = astar.AStarPath(plane.getLocation(), plane.getDestination());
-        if (path == null) {
-           logger.trace("plane: " + i + "can't take off yet");
-          if (simulating == true) {
+      
+        if (simulating == true) { // run a-star only in simulation mode to make it deterministic
+          logger.info("calculate a-star in simulation, plane " + i);
+          AStar astar = new AStar(walls, collisionDistance + 2);
+          path = astar.AStarPath(plane.getLocation(), plane.getDestination());
+          if (path == null) {
+            logger.trace("plane: " + i + "can't take off yet");
             if (i == currentPlane) {
               logger.trace("simulated plane can't take off yet. stop simulation.");
               // can't take-off yet. try later
               stopSimulation();
             }
+            // destination is unreachable at this time. 
+            // some other plane is landing/taking-off?
+            continue;
           }
-          // destination is unreachable at this time. 
-          // some other plane is landing/taking-off?
-          continue;
+          takeOff = true;
+          state.path = path;
+          state.fullPath = new ArrayDeque<Waypoint>(path); // save full-path
         }
       }
 
+      if (path != null) {
+        Waypoint firstWaypoint = path.peekFirst();
+        if (plane.getLocation().distance(firstWaypoint.point) < collisionDistance) {
+          logger.trace("plane: " + i + " reached waypoint: " + firstWaypoint.point);
+          if (path.size() > 1) { // keep the last element
+            path.removeFirst();
+            firstWaypoint = path.peekFirst();
+          }
+        }
 
-      Waypoint firstWaypoint = path.peekFirst();
-      if (plane.getLocation().distance(firstWaypoint.point) < collisionDistance) {
-        logger.trace("plane: " + i + " reached waypoint: " + firstWaypoint.point);
-        if (path.size() > 1) { // keep the last element
-          path.removeFirst();
-          firstWaypoint = path.peekFirst();
+        // head to first waypoint
+        logger.trace("plane " + i + " heading to: " + firstWaypoint.point
+            + " current location: " + plane.getLocation());
+        Vector currVec;
+        if (bearings[i] != WAITING) {
+          currVec = new Vector(bearings[i]);
+        } else {
+          currVec = new Vector(calculateBearing(plane.getLocation(), (Point2D.Double) firstWaypoint.point));
+        }
+        Vector goalVec = new Vector(calculateBearing(plane.getLocation(), (Point2D.Double) firstWaypoint.point));
+
+        bearings[i] = currVec.rotateToward(goalVec, maxBearingDeg).getBearing();
+        state.path = path;
+        if (simulating) {
+          logger.trace("updating simulate state for plane: " + i);
+          simulatedPlaneStates.put(plane.id, state);
+        } else {
+          logger.trace("updating state for plane: " + i);
+          planeStates.put(plane.id, state);
         }
       }
 
-      // head to first waypoint
-      logger.trace("plane " + i + " heading to: " + firstWaypoint.point
-          + " current location: " + plane.getLocation());
-	    Vector currVec;
-      if (bearings[i] != WAITING) {
-        currVec = new Vector(bearings[i]);
-      } else {
-        currVec = new Vector(calculateBearing(plane.getLocation(), (Point2D.Double) firstWaypoint.point));
-      }
-      Vector goalVec = new Vector(calculateBearing(plane.getLocation(), (Point2D.Double) firstWaypoint.point));
-
-      bearings[i] = currVec.rotateToward(goalVec, maxBearingDeg).getBearing();
-
-      state.path = path;
-      if (simulating) {
-        logger.trace("updating simulate state for plane: " + i);
-        simulatedPlaneStates.put(plane.id, state);
-      } else {
-        logger.trace("updating state for plane: " + i);
-        planeStates.put(plane.id, state);
-      }
       if (takeOff) {
         logger.trace("take-off plane: " + i);
         break;
