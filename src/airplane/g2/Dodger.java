@@ -26,13 +26,15 @@ public class Dodger extends airplane.sim.Player {
 
   // knobs
   private static final double maxBearingDeg = 9.9;
-  private static final double maxAirportApproachDeg = 9.0;
   private static final double collisionDistance = 5;
   private static final double velocity = 1;
+  private static final int maxSimulationRounds = 200; // prevent infinite orbiting...
+
 
   private double safetyDistance;
   private boolean simulating;
   private int currentPlane; // used while simulating
+  private int simulationRound = 0;
 	
 	@Override
 	public String getName() {
@@ -97,7 +99,8 @@ public class Dodger extends airplane.sim.Player {
     if (simulating == false) {
       logger.trace("round: " + round);
     } else {
-      logger.trace("simulating round: " + round);
+      simulationRound++;  
+      logger.trace("simulation round: " + simulationRound + ", simulating round: " + round);
     }
 
     // save ids
@@ -176,9 +179,16 @@ public class Dodger extends airplane.sim.Player {
                 simulatedPlaneStates.put(planes.get(k).id, newState);
               }
             }
+            simulationRound = 0;
             result = startSimulation(planes, round);
+            logger.info ("simulation took: " + simulationRound + " rounds");
+            if (simulationRound > maxSimulationRounds) {
+              wait = true; // abort re-simulation
+              break;
+            }
             if (result.getReason() == SimulationResult.TOO_CLOSE) {
               logger.trace ("collision detected!");
+              int origWallNum = walls.size();
               ArrayList<Plane> simulatedPlanes = result.getPlanes();
               // locate planes and add walls
               for (int j = 0; j < simulatedPlanes.size(); j++) {
@@ -216,9 +226,19 @@ public class Dodger extends airplane.sim.Player {
                   }
                 }
               }
+              if (origWallNum == walls.size()) {
+                logger.trace("added no new walls durning simulation, abort.");
+                // added no new walls, abort
+                wait = true;
+              }
+
               if (wait == true)
                 break;
-            } else {
+            } else if (result.getReason() == SimulationResult.STOPPED || result.getReason() == SimulationResult.NORMAL) {
+              logger.trace ("simulation end reason: " + result.getReason());
+              break;
+            }else {
+              wait = true;
               logger.trace ("simulation end reason: " + result.getReason());
               break;
             }
@@ -275,12 +295,7 @@ public class Dodger extends airplane.sim.Player {
       }
       Vector goalVec = new Vector(calculateBearing(plane.getLocation(), (Point2D.Double) firstWaypoint.point));
 
-      double maxDeg = maxBearingDeg;
-      if (path.size() == 1) {
-        maxDeg = maxAirportApproachDeg;
-      }
-
-      bearings[i] = currVec.rotateToward(goalVec, maxDeg).getBearing();
+      bearings[i] = currVec.rotateToward(goalVec, maxBearingDeg).getBearing();
 
       state.path = path;
       if (simulating) {
@@ -295,7 +310,8 @@ public class Dodger extends airplane.sim.Player {
         break;
       }
     }
-    if ((allDone || bearings[currentPlane] == FINISHED) && simulating) {
+    if (simulating && (allDone || bearings[currentPlane] == FINISHED 
+          || simulationRound > maxSimulationRounds)) {
       logger.trace("simulation stopped in round: " + round);
       stopSimulation();
     }
