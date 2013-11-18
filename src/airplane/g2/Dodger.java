@@ -25,7 +25,8 @@ public class Dodger extends airplane.sim.Player {
 	private static final int WAITING = -1;
 
   // knobs
-  private static final double maxBearingDeg = 9.5;
+  private static final double maxBearingDeg = 9.9;
+  private static final double maxAirportApproachDeg = 9.9;
   private static final double collisionDistance = 5;
   private static final double velocity = 1;
 
@@ -166,7 +167,10 @@ public class Dodger extends airplane.sim.Player {
                 PlaneState newState = new PlaneState();
                 if (origState.path != null) {
                   logger.trace("copy to simulated state, path exists for plane: " + k);
-                  newState.path = new ArrayDeque<Waypoint>(origState.path);
+                  newState.path = new ArrayDeque<Waypoint>();
+                  for (Waypoint waypoint: origState.path) {
+                    newState.path.add(waypoint);
+                  }
                 }
                 newState.target = origState.target;
                 simulatedPlaneStates.put(planes.get(k).id, newState);
@@ -180,6 +184,9 @@ public class Dodger extends airplane.sim.Player {
               for (int j = 0; j < simulatedPlanes.size(); j++) {
                 Plane simulatedPlane = simulatedPlanes.get(j);
                 Plane simulatedSelfPlane = simulatedPlanes.get(currentPlane);
+                if (bearings[j] == FINISHED || bearings[j] == WAITING) {
+                  continue;
+                }
                 if (currentPlane != j) {
                   double distance = simulatedSelfPlane.getLocation().distance(simulatedPlane.getLocation());
                   if (distance <= collisionDistance) {
@@ -267,7 +274,13 @@ public class Dodger extends airplane.sim.Player {
         currVec = new Vector(calculateBearing(plane.getLocation(), (Point2D.Double) firstWaypoint.point));
       }
       Vector goalVec = new Vector(calculateBearing(plane.getLocation(), (Point2D.Double) firstWaypoint.point));
-      bearings[i] = currVec.rotateToward(goalVec, maxBearingDeg).getBearing();
+
+      double maxDeg = maxBearingDeg;
+      if (path.size() == 1) {
+        maxDeg = maxAirportApproachDeg;
+      }
+
+      bearings[i] = currVec.rotateToward(goalVec, maxDeg).getBearing();
 
       state.path = path;
       if (simulating) {
