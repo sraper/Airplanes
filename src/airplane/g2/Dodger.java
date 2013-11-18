@@ -26,7 +26,7 @@ public class Dodger extends airplane.sim.Player {
 
   // knobs
   private static final double maxBearingDeg = 9.9;
-  private static final double maxAirportApproachDeg = 9.9;
+  private static final double maxAirportApproachDeg = 9.0;
   private static final double collisionDistance = 5;
   private static final double velocity = 1;
 
