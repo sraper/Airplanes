@@ -56,6 +56,11 @@ public class Vector
   {
     return new Vector(-x, -y);
   }
+  public double getAngle()
+  {
+    return Math.toDegrees(Math.atan2(y, x));
+  }
+
   public Vector rotate(double angleDegrees)
   {
     double angle = Math.toRadians(angleDegrees);
@@ -63,8 +68,19 @@ public class Vector
     double sin = Math.sin(angle);
     return new Vector (x*cos - y*sin, x*sin + y*cos);
   }
-  public Vector rotateToward(Vector v, double degrees) 
+  public Vector rotateToward(Vector v, double maxDegrees) 
   {
+   double thisAngle = this.getAngle();
+   double targetAngle = v.getAngle();
+   double deltaAngle = targetAngle - thisAngle;
+   if (Math.abs(deltaAngle) < maxDegrees) {
+    return this.rotate(deltaAngle);
+   } else if (deltaAngle >= 0 && deltaAngle <=180) {
+      return this.rotate(maxDegrees);
+   } else {
+      return this.rotate(-maxDegrees);
+   }
+   /*
 	 double degToRotate = degrees; //Math.min(degrees, this.angleBetween(v));
 	 
 	 // This is so fucking gross.
@@ -72,7 +88,7 @@ public class Vector
 		 return this.rotate(degToRotate);
 	 } else {
 		 return this.rotate(-degToRotate);
-	 }
+	 }*/
   }
   public double angleBetween(Vector v) 
   {

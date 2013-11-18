@@ -303,8 +303,8 @@ public class AStar {
 	}
 
 	boolean inBoardRange(Point2D point) {
-		if (point.getX() > 99 || point.getX() < 0 || point.getY() > 99
-				|| point.getY() < 0)
+		if (point.getX() > 99 || point.getX() < 1 || point.getY() > 99
+				|| point.getY() < 1)
 			return false;
 		else
 			return true;
@@ -333,8 +333,8 @@ public class AStar {
 		Line2D line;
 		point = Vector.addVectors(p, v).getPoint();
 		// do not add if outside board
-		if (point.getX() > 100 || point.getX() < 0 || point.getY() > 100
-				|| point.getY() < 0)
+		if (point.getX() > 99 || point.getX() < 1 || point.getY() > 99
+				|| point.getY() < 1)
 			return null;
     // do not add if near wall
     /*Point2D wallPoint = getNearWallPoint(point, safetyDistance);
@@ -411,7 +411,7 @@ public class AStar {
 			// Move towards waypointTarget
 			Set<Waypoint> visibleWaypoints = visibilityMap.get(waypointCurrent);
 			for (Waypoint waypoint : visibleWaypoints) {
-				if (!waypoint.closedList && (!waypoint.orificeWaypoint /*|| !checkOrifice*/)
+				if (!waypoint.closedList /*&& (!waypoint.orificeWaypoint || !checkOrifice**/
 						&& /* fail safe condition */waypoint != waypointCurrent) {
 					double newDistance = waypointCurrent.currentSourceDistance
 							+ Waypoint.getDistance(waypointCurrent, waypoint);
