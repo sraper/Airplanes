@@ -129,7 +129,7 @@ public class Dodger extends airplane.sim.Player {
         // skip
         continue;
       } else if (bearings[i] == WAITING && simulating && i > currentPlane) {
-        logger.info("not taking off plane: " + i + " in simulation" + " current plane: " + currentPlane);
+        logger.trace("not taking off plane: " + i + " in simulation" + " current plane: " + currentPlane);
         // do not take-off any new planes in simulation except the currentPlane
         continue;
       }
