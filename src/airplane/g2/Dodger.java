@@ -31,7 +31,7 @@ public class Dodger extends airplane.sim.Player {
   private static final int maxSimulationRounds = 200; // prevent infinite orbiting...
 
 
-  private double safetyDistance;
+  private double safetyDistance = 0;
   private boolean simulating;
   private int currentPlane; // used while simulating
   private int simulationRound = 0;
@@ -51,7 +51,8 @@ public class Dodger extends airplane.sim.Player {
     simulating = false;
     planeStates = new HashMap<Integer, PlaneState>();
     walls = new HashSet<Line2D>();
-    double safetyDistanceHorizontal = 0;
+    
+    /*double safetyDistanceHorizontal = 0;
     double safetyDistanceVertical = 0; // should increase to collisionDistance
     double safetyMoves = 0;
     // calculate safety distance
@@ -72,6 +73,7 @@ public class Dodger extends airplane.sim.Player {
         + " v: " + safetyDistanceVertical); 
 
     safetyDistance = Math.ceil(safetyDistanceHorizontal) + (safetyMoves*velocity); // add distance covered by opposite plane
+    */
     logger.info ("safety distance: " + safetyDistance);
 		logger.info("Starting new game!");
 	}
@@ -178,7 +180,7 @@ public class Dodger extends airplane.sim.Player {
             }
             simulationRound = 0;
             result = startSimulation(planes, round);
-            logger.info ("simulation took: " + simulationRound + " rounds");
+            logger.trace ("simulation took: " + simulationRound + " rounds");
             if (simulationRound > maxSimulationRounds) {
               wait = true; // abort re-simulation
               break;
@@ -199,7 +201,7 @@ public class Dodger extends airplane.sim.Player {
                   if (distance <= collisionDistance) {
                     PlaneState simulatedPlaneState = simulatedPlaneStates.get(simulatedPlane.id);
                     if (simulatedPlaneState != null) {
-                      logger.info("collision!" 
+                      logger.trace("collision!" 
                           + " plane " + currentPlane + ": " + simulatedSelfPlane.getLocation()
                           + " plane " + j + ": " + simulatedPlane.getLocation());
                       // create wall here
@@ -246,7 +248,7 @@ public class Dodger extends airplane.sim.Player {
           }
 
           // path is available, retrieve from simulated state
-          logger.info("no collisions detected. retrieving path for plane: " + i);
+          logger.trace("no collisions detected. retrieving path for plane: " + i);
           ArrayList<Plane> simulatedPlanes = result.getPlanes();
           Plane simulatedSelfPlane = simulatedPlanes.get(currentPlane);
           PlaneState simulatedPlaneState = simulatedPlaneStates.get(simulatedSelfPlane.id);
@@ -262,7 +264,7 @@ public class Dodger extends airplane.sim.Player {
         }
       
         if (simulating == true) { // run a-star only in simulation mode to make it deterministic
-          logger.info("calculate a-star in simulation, plane " + i);
+          logger.trace("calculate a-star in simulation, plane " + i);
           AStar astar = new AStar(walls, collisionDistance + 2);
           path = astar.AStarPath(plane.getLocation(), plane.getDestination());
           if (path == null) {
