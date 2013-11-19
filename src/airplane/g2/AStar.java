@@ -22,6 +22,8 @@ public class AStar {
   //private Set<Waypoint> orificeWaypointSet;
   //private boolean checkOrifice = true;
   private double safetyDistance;
+
+  private double wpDistance = 1;
 	
 	private ArrayList<Line2D> lines = new ArrayList<Line2D>();
 
@@ -69,10 +71,18 @@ public class AStar {
       opposite.multiply(safetyDistance);
 
       // add waypoints
-      addWaypoint(p11, along, lines, false);
-      addWaypoint(p12, along, lines, false);
-      addWaypoint(p21, opposite, lines, false);
-      addWaypoint(p22, opposite, lines, false);
+      // play around with cw and acw  
+      cw.normalize();
+      cw.multiply(wpDistance);
+      acw.normalize();
+      acw.multiply(wpDistance);
+
+      Vector nullVector = new Vector(0, 0);
+
+      addWaypoint(Vector.addVectors(p11, cw), along, lines, false);
+      addWaypoint(Vector.addVectors(p12, acw), along, lines, false);
+      addWaypoint(Vector.addVectors(p21, cw), opposite, lines, false);
+      addWaypoint(Vector.addVectors(p22, acw), opposite, lines, false);
 
       // Add 2 more parallel walls
       Line2D wall1 = new Line2D.Double(p11.getPoint(), p21.getPoint());
@@ -134,7 +144,7 @@ public class AStar {
         {
           Point2D point21 = line2.getP1();
           Point2D point22 = line2.getP2();
-          if (point11.distance(point21) < safetyDistance)
+          if (point11.distance(point21) <= safetyDistance)
           {
             if (!consideredPoints.contains(point21))
             {
@@ -154,7 +164,7 @@ public class AStar {
               addWaypoint(v, acw, lines, true);
             }
           }
-          if (point11.distance(point22) < safetyDistance)
+          if (point11.distance(point22) <= safetyDistance)
           {
             if (!consideredPoints.contains(point22))
             {
@@ -174,7 +184,7 @@ public class AStar {
               addWaypoint(v, acw, lines, true);
             }
           }
-          if (point12.distance(point21) < safetyDistance)
+          if (point12.distance(point21) <= safetyDistance)
           {
             if (!consideredPoints.contains(point21))
             {
@@ -194,7 +204,7 @@ public class AStar {
               addWaypoint(v, acw, lines, true);
             }
           }
-          if (point12.distance(point22) < safetyDistance)
+          if (point12.distance(point22) <= safetyDistance)
           {
             if (!consideredPoints.contains(point22))
             {
@@ -273,7 +283,7 @@ public class AStar {
     {
       for (Point2D p2 : negativeWallPoints)
       {
-        if (p1.distance(p2) < safetyDistance)
+        if (p1.distance(p2) <= safetyDistance)
         {
           Line2D orificeLine = new Line2D.Double(p1, p2);
           boolean relativePoint1 = orificeLine.relativeCCW(point1) > 0;

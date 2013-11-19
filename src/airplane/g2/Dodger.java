@@ -31,7 +31,7 @@ public class Dodger extends airplane.sim.Player {
   private static final int maxSimulationRounds = 200; // prevent infinite orbiting...
 
 
-  private double safetyDistance = 0;
+  private double safetyDistance = 5;
   private boolean simulating;
   private int currentPlane; // used while simulating
   private int simulationRound = 0;
@@ -95,7 +95,6 @@ public class Dodger extends airplane.sim.Player {
 	@Override
 	public double[] updatePlanes(ArrayList<Plane> planes, int round, double[] bearings) {
     boolean allDone = true;
-    boolean takeOff = false; // have to take-off one plane at a time
     boolean wait = false;
 
     if (simulating == false) {
@@ -129,8 +128,8 @@ public class Dodger extends airplane.sim.Player {
       if (round < plane.getDepartureTime() || bearings[i] == FINISHED) {
         // skip
         continue;
-      } else if (bearings[i] == WAITING && simulating && i != currentPlane) {
-        logger.trace("not taking off plane: " + i + " in simulation" + " current plane: " + currentPlane);
+      } else if (bearings[i] == WAITING && simulating && i > currentPlane) {
+        logger.info("not taking off plane: " + i + " in simulation" + " current plane: " + currentPlane);
         // do not take-off any new planes in simulation except the currentPlane
         continue;
       }
@@ -256,7 +255,6 @@ public class Dodger extends airplane.sim.Player {
             path = simulatedPlaneState.fullPath;
             state.path = path;
             state.fullPath = new ArrayDeque<Waypoint>(path);
-            takeOff = true;
           } else {
             wait = true;
             continue;
@@ -265,7 +263,7 @@ public class Dodger extends airplane.sim.Player {
       
         if (simulating == true) { // run a-star only in simulation mode to make it deterministic
           logger.trace("calculate a-star in simulation, plane " + i);
-          AStar astar = new AStar(walls, collisionDistance + 2);
+          AStar astar = new AStar(walls, collisionDistance);
           path = astar.AStarPath(plane.getLocation(), plane.getDestination());
           if (path == null) {
             logger.trace("plane: " + i + "can't take off yet");
@@ -278,7 +276,6 @@ public class Dodger extends airplane.sim.Player {
             // some other plane is landing/taking-off?
             continue;
           }
-          takeOff = true;
           state.path = path;
           state.fullPath = new ArrayDeque<Waypoint>(path); // save full-path
         }
@@ -314,11 +311,6 @@ public class Dodger extends airplane.sim.Player {
           logger.trace("updating state for plane: " + i);
           planeStates.put(plane.id, state);
         }
-      }
-
-      if (takeOff) {
-        logger.trace("take-off plane: " + i);
-        break;
       }
     }
     if (simulating && (allDone || bearings[currentPlane] == FINISHED 
