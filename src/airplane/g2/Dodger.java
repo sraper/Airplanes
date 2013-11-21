@@ -37,6 +37,8 @@ public class Dodger extends airplane.sim.Player {
 	private boolean simulating;
 	private int currentPlane; // used while simulating
 	private int simulationRound = 0;
+
+  private HashSet<Integer> takenOff;
 	
 
 	@Override
@@ -54,6 +56,7 @@ public class Dodger extends airplane.sim.Player {
 		simulating = false;
 		planeStates = new HashMap<Integer, PlaneState>();
 		walls = new HashSet<Line2D>();
+    takenOff = new HashSet<Integer>();
 
 		// initial naive sort by path distance
 		//Collections.sort(planes, new PlaneSorter());
@@ -135,12 +138,12 @@ public class Dodger extends airplane.sim.Player {
 			if (round < plane.getDepartureTime() || bearings[i] == FINISHED) {
 				// skip
 				continue;
-			} else if (bearings[i] == WAITING && simulating && i > currentPlane) {
-				logger.trace("not taking off plane: " + i + " in simulation"
-						+ " current plane: " + currentPlane);
-				// do not take-off any new planes in simulation except the
-				// currentPlane
-				continue;
+			} else if (bearings[i] == WAITING && simulating && !takenOff.contains(i) && i != currentPlane) {
+        logger.trace("not taking off plane: " + i + " in simulation"
+            + " current plane: " + currentPlane);
+        // do not take-off any new planes in simulation except the
+        // currentPlane
+        continue;
 			}
 
 			if (simulating) {
@@ -208,8 +211,8 @@ public class Dodger extends airplane.sim.Player {
 								Plane simulatedPlane = simulatedPlanes.get(j);
 								Plane simulatedSelfPlane = simulatedPlanes
 										.get(currentPlane);
-								if (bearings[j] == FINISHED
-										|| bearings[j] == WAITING) {
+								if (simulatedPlane.getBearing() == FINISHED
+										|| simulatedPlane.getBearing() == WAITING) {
 									continue;
 								}
 								if (currentPlane != j) {
@@ -274,7 +277,7 @@ public class Dodger extends airplane.sim.Player {
 								}
 							}
 							if (origWallNum == walls.size()) {
-								logger.trace("added no new walls durning simulation, abort.");
+								logger.trace("added no new walls during simulation, abort.");
 								// added no new walls, abort
 								wait = true;
 							}
@@ -311,6 +314,7 @@ public class Dodger extends airplane.sim.Player {
 						state.path = path;
 						state.fullPath = new ArrayDeque<Waypoint>(path);
 					} else {
+						logger.trace("path is null, destination unreachable for plane " + i);
 						wait = true;
 						continue;
 					}
@@ -360,13 +364,16 @@ public class Dodger extends airplane.sim.Player {
 				if (bearings[i] != WAITING) {
 					currVec = new Vector(bearings[i]);
 				} else {
+          if (simulating == false) {
+            takenOff.add(i);
+          }
 					currVec = new Vector(calculateBearing(plane.getLocation(),
 							(Point2D.Double) firstWaypoint.point));
 				}
 				Vector goalVec = new Vector(calculateBearing(
 						plane.getLocation(),
 						(Point2D.Double) firstWaypoint.point));
-
+        
 				bearings[i] = currVec.rotateToward(goalVec, maxBearingDeg)
 						.getBearing();
 				state.path = path;
