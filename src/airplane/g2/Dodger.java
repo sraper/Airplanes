@@ -98,7 +98,7 @@ public class Dodger extends airplane.sim.Player {
 	public double[] updatePlanes(ArrayList<Plane> planes, int round,
 			double[] bearings) {
 		for (Plane p : planes) {
-			if(simulating == false) logger.info("Start: " + p.getLocation() + ", End: " + p.getDestination());
+			if(simulating == false) logger.trace("Start: " + p.getLocation() + ", End: " + p.getDestination());
 		}
 		boolean allDone = true;
 		boolean wait = false;
@@ -116,7 +116,7 @@ public class Dodger extends airplane.sim.Player {
 			for (int i = 0; i < planes.size(); i++) {
 				Plane plane = planes.get(i);
 				plane.id = i;
-				logger.info("init plane, location: " + plane.getLocation()
+				logger.info("init plane " + i + ", location: " + plane.getLocation()
 						+ " destination: " + plane.getDestination()
 						+ " departure: " + plane.getDepartureTime());
 			}
@@ -341,9 +341,11 @@ public class Dodger extends airplane.sim.Player {
 
 			if (path != null) {
 				Waypoint firstWaypoint = path.peekFirst();
-				if (plane.getLocation().distance(firstWaypoint.point) < collisionDistance) {
-					logger.trace("plane: " + i + " reached waypoint: "
-							+ firstWaypoint.point);
+				if (Math.abs(plane.getLocation().distance(firstWaypoint.point)) <= collisionDistance) {
+          if (simulating == false) {
+            logger.trace("plane: " + i + " reached waypoint: "
+                + firstWaypoint.point);
+          }
 					if (path.size() > 1) { // keep the last element
 						path.removeFirst();
 						firstWaypoint = path.peekFirst();
