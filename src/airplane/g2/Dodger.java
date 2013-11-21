@@ -115,7 +115,7 @@ public class Dodger extends airplane.sim.Player {
 			for (int i = 0; i < planes.size(); i++) {
 				Plane plane = planes.get(i);
 				plane.id = i;
-				logger.info("init plane, location: " + plane.getLocation()
+				logger.info("init plane " + i + ", location: " + plane.getLocation()
 						+ " destination: " + plane.getDestination()
 						+ " departure: " + plane.getDepartureTime());
 			}
@@ -340,9 +340,11 @@ public class Dodger extends airplane.sim.Player {
 
 			if (path != null) {
 				Waypoint firstWaypoint = path.peekFirst();
-				if (plane.getLocation().distance(firstWaypoint.point) < collisionDistance) {
-					logger.trace("plane: " + i + " reached waypoint: "
-							+ firstWaypoint.point);
+				if (Math.abs(plane.getLocation().distance(firstWaypoint.point)) <= collisionDistance) {
+          if (simulating == false) {
+            logger.info("plane: " + i + " reached waypoint: "
+                + firstWaypoint.point);
+          }
 					if (path.size() > 1) { // keep the last element
 						path.removeFirst();
 						firstWaypoint = path.peekFirst();
