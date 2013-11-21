@@ -56,7 +56,8 @@ public class Dodger extends airplane.sim.Player {
 		walls = new HashSet<Line2D>();
 
 		// initial naive sort by path distance
-		Collections.sort(planes, new PlaneSorter());
+		//Collections.sort(planes, new PlaneSorter());
+		Collections.sort(planes, new IdealIntersectionSorter(planes));
 		/*
 		 * double safetyDistanceHorizontal = 0; double safetyDistanceVertical =
 		 * 0; // should increase to collisionDistance double safetyMoves = 0; //
@@ -402,5 +403,38 @@ class PlaneSorter implements Comparator<Plane> {
 	
 	private double dist(double x, double y, double x2, double y2) {
 		return Math.sqrt((x-x2)*(x-x2) + (y-y2)*(y-y2));
+	}
+}
+
+class IdealIntersectionSorter implements Comparator<Plane> {
+	
+	HashMap<Plane, Integer> numIntersections = new HashMap<Plane, Integer>();
+	
+	public IdealIntersectionSorter(ArrayList<Plane> planes) {
+		HashMap<Plane, Line2D.Double> idealPaths = new HashMap<Plane, Line2D.Double>();
+		
+		for (Plane p : planes) {
+			idealPaths.put(p, new Line2D.Double(p.getLocation(), p.getDestination()));
+		}
+		
+		for (Plane p : planes) {
+			Line2D.Double path = idealPaths.get(p);
+			for (Line2D.Double o : idealPaths.values()) {
+				if (path == o) {
+					continue;
+				} else if (path.intersectsLine(o)) {
+					numIntersections.put(p, numIntersections.containsKey(p) ? numIntersections.get(p) + 1 : 1);
+				}
+			}
+		}
+	}
+	
+	@Override
+	public int compare(Plane p0, Plane p1) {
+		Integer n0 = numIntersections.get(p0);
+	    Integer n1 = numIntersections.get(p1);
+	    if (n0 == null || n1 == null) return 0;
+	    
+	    return (n0 == n1 ? 0 : (n0 > n1 ? -1 : 1));
 	}
 }
