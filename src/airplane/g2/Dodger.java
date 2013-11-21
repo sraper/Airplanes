@@ -97,7 +97,7 @@ public class Dodger extends airplane.sim.Player {
 	public double[] updatePlanes(ArrayList<Plane> planes, int round,
 			double[] bearings) {
 		for (Plane p : planes) {
-			if(simulating == false) logger.info("Start: " + p.getLocation() + ", End: " + p.getDestination());
+			if(simulating == false) logger.trace("Start: " + p.getLocation() + ", End: " + p.getDestination());
 		}
 		boolean allDone = true;
 		boolean wait = false;
