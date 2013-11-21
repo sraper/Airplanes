@@ -10,6 +10,7 @@ import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
@@ -40,6 +41,7 @@ public class Dodger extends airplane.sim.Player {
 
   private HashSet<Integer> takenOff;
 	
+	private HashMap<PointTuple, Integer> flows;
 
 	@Override
 	public String getName() {
@@ -57,10 +59,41 @@ public class Dodger extends airplane.sim.Player {
 		planeStates = new HashMap<Integer, PlaneState>();
 		walls = new HashSet<Line2D>();
     takenOff = new HashSet<Integer>();
-
+		
+		for (int i = 0; i < planes.size(); i++) {
+			Plane plane = planes.get(i);
+			plane.id = i;
+			logger.info("init plane " + i + ", location: "
+					+ plane.getLocation() + " destination: "
+					+ plane.getDestination() + " departure: "
+					+ plane.getDepartureTime());
+		}
 		// initial naive sort by path distance
-		//Collections.sort(planes, new PlaneSorter());
+		// Collections.sort(planes, new PlaneSorter());
 		Collections.sort(planes, new IdealIntersectionSorter(planes));
+
+		flows = new HashMap<PointTuple, Integer>();
+		for (Plane p : planes) {
+			PointTuple pt = new PointTuple(p.getLocation(), p.getDestination());
+			flows.put(pt, flows.containsKey(pt) ? flows.get(pt) + 1 : 1);
+		}
+		Set<Map.Entry<PointTuple, Integer>> myset = new HashSet<Map.Entry<PointTuple, Integer>>();
+		myset.addAll(flows.entrySet());
+		for (Entry<PointTuple, Integer> pt : myset) {
+			if (pt.getValue() < 5) {
+				flows.remove(pt.getKey());
+			}
+		}
+
+		setFlowPaths(planes);
+		
+		
+		
+		logger.info(flows.toString());
+
+
+		
+		
 		/*
 		 * double safetyDistanceHorizontal = 0; double safetyDistanceVertical =
 		 * 0; // should increase to collisionDistance double safetyMoves = 0; //
@@ -82,6 +115,61 @@ public class Dodger extends airplane.sim.Player {
 		logger.info("Starting new game!");
 	}
 
+	private void setFlowPaths(ArrayList<Plane> planes) {
+		Set<Map.Entry<PointTuple, Integer>> myset2 = new HashSet<Map.Entry<PointTuple, Integer>>();
+		myset2.addAll(flows.entrySet());
+		double flowsafety = this.safetyDistance + .1;
+		
+		for (Entry<PointTuple, Integer> pt : myset2) {
+			AStar as = new AStar(walls, flowsafety);
+			Point2D p1 = pt.getKey().a;
+			Point2D p2 = pt.getKey().b;
+//			if(as.isInLineOfSight(p1.getX(),p1.getY(), p2.getX(), p2.getY())) {
+//				for (Plane p : planes) {
+//					if(p.getLocation().equals(p1) && p.getDestination().equals(p2)) {
+//						PlaneState ps = new PlaneState();
+//						ps.fullPath = as.AStarPath(p1, p2);
+//						ps.path = new ArrayDeque<Waypoint>();
+//						ps.path.addAll(ps.fullPath);
+//						ps.target = p2;
+//						planeStates.put(p.id, ps);
+//					}
+//				}
+//				walls.add(new Line2D.Double(p1, p2));
+//			} else {
+			
+			if (!myset2.contains(new PointTuple(p2, p1))) {
+			
+				Deque<Waypoint> dq = as.AStarPath(p1, p2);
+				if (dq != null) {
+					for (Plane p : planes) {
+						if(p.getLocation().equals(p1) && p.getDestination().equals(p2)) {
+							PlaneState ps = new PlaneState();
+							ps.fullPath = dq;
+							ps.path = new ArrayDeque<Waypoint>();
+							ps.path.addAll(ps.fullPath);
+							ps.target = p2;
+							planeStates.put(p.id, ps);
+						}
+					}
+					Point2D start = p1;
+					Point2D end;
+					for(Waypoint w : dq) {
+						end = dq.removeFirst().point;
+						walls.add(new Line2D.Double(start, end));
+						start = end;
+					}
+				}
+			}
+		}
+		logger.info("hello");
+		for(Line2D l : walls) {
+			logger.info(l.getP1() + ", " + l.getP2());
+		}
+	}
+	
+	
+
 	@Override
 	public double[] simulateUpdate(ArrayList<Plane> planes, int round,
 			double[] bearings) {
@@ -101,7 +189,9 @@ public class Dodger extends airplane.sim.Player {
 	public double[] updatePlanes(ArrayList<Plane> planes, int round,
 			double[] bearings) {
 		for (Plane p : planes) {
-			if(simulating == false) logger.trace("Start: " + p.getLocation() + ", End: " + p.getDestination());
+			if (simulating == false)
+				logger.trace("Start: " + p.getLocation() + ", End: "
+						+ p.getDestination());
 		}
 		boolean allDone = true;
 		boolean wait = false;
@@ -115,17 +205,17 @@ public class Dodger extends airplane.sim.Player {
 		}
 
 		// save ids
-		if (round == 1 && simulating == false) {
-			for (int i = 0; i < planes.size(); i++) {
-				Plane plane = planes.get(i);
-				plane.id = i;
-				logger.info("init plane " + i + ", location: " + plane.getLocation()
-						+ " destination: " + plane.getDestination()
-						+ " departure: " + plane.getDepartureTime());
-			}
-		}
+//		if (round == 1 && simulating == false) {
+//			for (int i = 0; i < planes.size(); i++) {
+//				Plane plane = planes.get(i);
+//				plane.id = i;
+//				logger.info("init plane " + i + ", location: "
+//						+ plane.getLocation() + " destination: "
+//						+ plane.getDestination() + " departure: "
+//						+ plane.getDepartureTime());
+//			}
+//		}
 
-		// TODO: sort planes
 		for (int i = 0; i < planes.size(); i++) {
 			Plane plane = planes.get(i);
 			PlaneState state;
@@ -344,45 +434,49 @@ public class Dodger extends airplane.sim.Player {
 			}
 
 			if (path != null) {
-				Waypoint firstWaypoint = path.peekFirst();
-				if (Math.abs(plane.getLocation().distance(firstWaypoint.point)) <= collisionDistance) {
-          if (simulating == false) {
-            logger.trace("plane: " + i + " reached waypoint: "
-                + firstWaypoint.point);
-          }
-					if (path.size() > 1) { // keep the last element
-						path.removeFirst();
-						firstWaypoint = path.peekFirst();
+				if(bearings[i] == WAITING && planeTooClose(plane, planes, bearings)) {
+					bearings[i] = WAITING;
+				} else {
+					Waypoint firstWaypoint = path.peekFirst();
+					if (Math.abs(plane.getLocation().distance(firstWaypoint.point)) <= collisionDistance) {
+						if (simulating == false) {
+							logger.trace("plane: " + i + " reached waypoint: "
+									+ firstWaypoint.point);
+						}
+						if (path.size() > 1) { // keep the last element
+							path.removeFirst();
+							firstWaypoint = path.peekFirst();
+						}
 					}
-				}
-
-				// head to first waypoint
-				logger.trace("plane " + i + " heading to: "
-						+ firstWaypoint.point + " current location: "
-						+ plane.getLocation());
-				Vector currVec;
-				if (bearings[i] != WAITING) {
-					currVec = new Vector(bearings[i]);
-				} else {
-          if (simulating == false) {
-            takenOff.add(i);
-          }
-					currVec = new Vector(calculateBearing(plane.getLocation(),
+	
+					// head to first waypoint
+					logger.trace("plane " + i + " heading to: "
+							+ firstWaypoint.point + " current location: "
+							+ plane.getLocation());
+					Vector currVec;
+					if (bearings[i] != WAITING) {
+						currVec = new Vector(bearings[i]);
+					} else {
+            if (simulating == false) {
+              takenOff.add(i);
+            }
+						currVec = new Vector(calculateBearing(plane.getLocation(),
+								(Point2D.Double) firstWaypoint.point));
+					}
+					Vector goalVec = new Vector(calculateBearing(
+							plane.getLocation(),
 							(Point2D.Double) firstWaypoint.point));
-				}
-				Vector goalVec = new Vector(calculateBearing(
-						plane.getLocation(),
-						(Point2D.Double) firstWaypoint.point));
-        
-				bearings[i] = currVec.rotateToward(goalVec, maxBearingDeg)
-						.getBearing();
-				state.path = path;
-				if (simulating) {
-					logger.trace("updating simulate state for plane: " + i);
-					simulatedPlaneStates.put(plane.id, state);
-				} else {
-					logger.trace("updating state for plane: " + i);
-					planeStates.put(plane.id, state);
+	
+					bearings[i] = currVec.rotateToward(goalVec, maxBearingDeg)
+							.getBearing();
+					state.path = path;
+					if (simulating) {
+						logger.trace("updating simulate state for plane: " + i);
+						simulatedPlaneStates.put(plane.id, state);
+					} else {
+						logger.trace("updating state for plane: " + i);
+						planeStates.put(plane.id, state);
+					}
 				}
 			}
 		}
@@ -394,13 +488,69 @@ public class Dodger extends airplane.sim.Player {
 
 		return bearings;
 	}
+	private boolean planeTooClose(Plane p, ArrayList<Plane> planes, double[] bearings) {
+		for (int i = 0; i < planes.size(); i++) {
+			Plane o = planes.get(i);
+			if (p != o && bearings[i] >= 0 && p.getLocation().distance(o.getLocation()) < 5.01) return true;
+		}
+		return false;
+	}
+}
+
+class PointTuple {
+	Point2D a;
+	Point2D b;
+
+	public PointTuple(Point2D a, Point2D b) {
+		this.a = a;
+		this.b = b;
+	}
+
+	@Override
+	public String toString() {
+		return "(" + a + ", " + b + ")";
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((a == null) ? 0 : a.hashCode());
+		result = prime * result + ((b == null) ? 0 : b.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		PointTuple other = (PointTuple) obj;
+		if (a == null) {
+			if (other.a != null)
+				return false;
+		} else if (!a.equals(other.a))
+			return false;
+		if (b == null) {
+			if (other.b != null)
+				return false;
+		} else if (!b.equals(other.b))
+			return false;
+		return true;
+	}
+
 }
 
 class PlaneSorter implements Comparator<Plane> {
 	@Override
 	public int compare(Plane arg0, Plane arg1) {
-		double d0 = dist(arg0.getX(), arg0.getY(), arg0.getDestination().getX(), arg0.getDestination().getY());
-		double d1 = dist(arg1.getX(), arg1.getY(), arg1.getDestination().getX(), arg1.getDestination().getY());
+		double d0 = dist(arg0.getX(), arg0.getY(),
+				arg0.getDestination().getX(), arg0.getDestination().getY());
+		double d1 = dist(arg1.getX(), arg1.getY(),
+				arg1.getDestination().getX(), arg1.getDestination().getY());
 		if (d0 < d1) {
 			return 1;
 		} else if (d0 > d1) {
@@ -409,41 +559,46 @@ class PlaneSorter implements Comparator<Plane> {
 			return 0;
 		}
 	}
-	
+
 	private double dist(double x, double y, double x2, double y2) {
-		return Math.sqrt((x-x2)*(x-x2) + (y-y2)*(y-y2));
+		return Math.sqrt((x - x2) * (x - x2) + (y - y2) * (y - y2));
 	}
 }
 
 class IdealIntersectionSorter implements Comparator<Plane> {
-	
+
 	HashMap<Plane, Integer> numIntersections = new HashMap<Plane, Integer>();
-	
+
 	public IdealIntersectionSorter(ArrayList<Plane> planes) {
 		HashMap<Plane, Line2D.Double> idealPaths = new HashMap<Plane, Line2D.Double>();
-		
+
 		for (Plane p : planes) {
-			idealPaths.put(p, new Line2D.Double(p.getLocation(), p.getDestination()));
+			idealPaths.put(p,
+					new Line2D.Double(p.getLocation(), p.getDestination()));
 		}
-		
+
 		for (Plane p : planes) {
 			Line2D.Double path = idealPaths.get(p);
 			for (Line2D.Double o : idealPaths.values()) {
 				if (path == o) {
 					continue;
 				} else if (path.intersectsLine(o)) {
-					numIntersections.put(p, numIntersections.containsKey(p) ? numIntersections.get(p) + 1 : 1);
+					numIntersections.put(
+							p,
+							numIntersections.containsKey(p) ? numIntersections
+									.get(p) + 1 : 1);
 				}
 			}
 		}
 	}
-	
+
 	@Override
 	public int compare(Plane p0, Plane p1) {
 		Integer n0 = numIntersections.get(p0);
-	    Integer n1 = numIntersections.get(p1);
-	    if (n0 == null || n1 == null) return 0;
-	    
-	    return (n0 == n1 ? 0 : (n0 > n1 ? -1 : 1));
+		Integer n1 = numIntersections.get(p1);
+		if (n0 == null || n1 == null)
+			return 0;
+
+		return (n0 == n1 ? 0 : (n0 > n1 ? -1 : 1));
 	}
 }
