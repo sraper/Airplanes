@@ -36,7 +36,7 @@ public class Dodger extends airplane.sim.Player {
 	private static final int maxSimulationRounds = 200; // prevent infinite
 														// orbiting...
 
-	private double safetyDistance = 7;
+	private double safetyDistance = 7; // TODO: try tweaking this...
 	private boolean simulating;
 	private int currentPlane; // used while simulating
 	private int simulationRound = 0;
