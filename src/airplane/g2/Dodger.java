@@ -337,15 +337,19 @@ public class Dodger extends airplane.sim.Player {
 															.peekFirst().point);
 											alongPath.normalize();
 											alongPath.multiply(safetyDistance);
+                      Vector oppositePath = alongPath.rotateOpposite();
+											oppositePath.normalize();
+											oppositePath.multiply(safetyDistance/2);
 											Vector planeVector = new Vector(
 													simulatedPlane
 															.getLocation());
+                      planeVector = Vector.addVectors(planeVector, oppositePath);
 											Vector safetyPointVector = Vector
 													.addVectors(planeVector,
 															alongPath);
 											Line2D wall = new Line2D.Double(
-													simulatedPlane
-															.getLocation(),
+													planeVector
+															.getPoint(),
 													safetyPointVector
 															.getPoint());
 											// check if we are getting the same
@@ -562,11 +566,11 @@ public class Dodger extends airplane.sim.Player {
     }
     ////////// perp wall
     opposite.normalize();
-    opposite.multiply(collisionDistance/2);
+    opposite.multiply(safetyDistance/2);
     acw.normalize();
-    acw.multiply(collisionDistance/2);
+    acw.multiply(safetyDistance/2);
     cw.normalize();
-    cw.multiply(collisionDistance/2);
+    cw.multiply(safetyDistance/2);
     Vector perpVec1 = Vector.addVectors(Vector.addVectors(p1, opposite), acw);
     Vector perpVec2 = Vector.addVectors(Vector.addVectors(p1, opposite), cw);
     Line2D wallPerp = new Line2D.Double(perpVec1.getPoint(), perpVec2.getPoint());
