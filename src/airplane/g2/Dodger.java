@@ -191,6 +191,7 @@ public class Dodger extends airplane.sim.Player {
 	@Override
 	public double[] updatePlanes(ArrayList<Plane> planes, int round,
 			double[] bearings) {
+    lines.clear();
 		for (Plane p : planes) {
 			if (simulating == false)
 				logger.trace("Start: " + p.getLocation() + ", End: "
@@ -364,6 +365,7 @@ public class Dodger extends airplane.sim.Player {
 													wait = true;
 												}
 											}
+                      wallTrace(wall);
 											walls.add(wall);
 										}
 									}
@@ -463,62 +465,7 @@ public class Dodger extends airplane.sim.Player {
             if (simulating == false) {
               takenOff.add(i);
               for (Line2D wall: walls) {
-                  // wall trace
-                  lines.add(wall);
-                  Vector p1 = new Vector(wall.getP1());
-                  Vector p2 = new Vector(wall.getP2());
-                  Vector lineTangent = new Vector(wall.getP2(), wall.getP1());
-                  lineTangent.normalize();
-                  lineTangent.multiply(collisionDistance);
-                  Vector along = lineTangent;
-                  Vector opposite = lineTangent.rotateOpposite();
-                  Vector cw = lineTangent.rotate90Clockwise();
-                  Vector acw = lineTangent.rotate90AntiClockwise();
-                  Vector p11 = Vector.addVectors(p1, cw);
-                  Vector p12 = Vector.addVectors(p1, acw);
-                  Vector p21 = Vector.addVectors(p2, cw);
-                  Vector p22 = Vector.addVectors(p2, acw);
-                  Line2D wall1 = new Line2D.Double(p11.getPoint(), p21.getPoint());
-                  Line2D wall2 = new Line2D.Double(p12.getPoint(), p22.getPoint());
-                  Line2D wall3 = new Line2D.Double(p11.getPoint(), p12.getPoint());
-                  Line2D wall4 = new Line2D.Double(p21.getPoint(), p22.getPoint());
-                  lines.add(wall1);
-                  lines.add(wall2);
-                  lines.add(wall3);
-                  lines.add(wall4);
-
-                  along.normalize();
-                  along.multiply(collisionDistance);
-                  opposite.normalize();
-                  opposite.multiply(collisionDistance);
-
-                  // add waypoints
-                  // play around with cw and acw
-                  cw.normalize();
-                  cw.multiply(1);
-                  acw.normalize();
-                  acw.multiply(1);
-                  
-                  {
-                    Point2D point = Vector.addVectors(Vector.addVectors(p11, cw), along).getPoint();
-                    Line2D wp = new Line2D.Double(point, point);
-                    lines.add(wp);
-                  }
-                  {
-                    Point2D point = Vector.addVectors(Vector.addVectors(p12, acw), along).getPoint();
-                    Line2D wp = new Line2D.Double(point, point);
-                    lines.add(wp);
-                  }
-                  {
-                    Point2D point = Vector.addVectors(Vector.addVectors(p21, cw), opposite).getPoint();
-                    Line2D wp = new Line2D.Double(point, point);
-                    lines.add(wp);
-                  }
-                  {
-                    Point2D point = Vector.addVectors(Vector.addVectors(p22, acw), opposite).getPoint();
-                    Line2D wp = new Line2D.Double(point, point);
-                    lines.add(wp);
-                  }
+                wallTrace(wall);
               }  
             }
 						currVec = new Vector(calculateBearing(plane.getLocation(),
@@ -593,6 +540,66 @@ public class Dodger extends airplane.sim.Player {
 		}
 		return false;
 	}
+
+  private void wallTrace (Line2D wall) {
+    // wall trace
+    lines.add(wall);
+    Vector p1 = new Vector(wall.getP1());
+    Vector p2 = new Vector(wall.getP2());
+    Vector lineTangent = new Vector(wall.getP2(), wall.getP1());
+    lineTangent.normalize();
+    lineTangent.multiply(collisionDistance);
+    Vector along = lineTangent;
+    Vector opposite = lineTangent.rotateOpposite();
+    Vector cw = lineTangent.rotate90Clockwise();
+    Vector acw = lineTangent.rotate90AntiClockwise();
+    Vector p11 = Vector.addVectors(p1, cw);
+    Vector p12 = Vector.addVectors(p1, acw);
+    Vector p21 = Vector.addVectors(p2, cw);
+    Vector p22 = Vector.addVectors(p2, acw);
+    Line2D wall1 = new Line2D.Double(p11.getPoint(), p21.getPoint());
+    Line2D wall2 = new Line2D.Double(p12.getPoint(), p22.getPoint());
+    Line2D wall3 = new Line2D.Double(p11.getPoint(), p12.getPoint());
+    Line2D wall4 = new Line2D.Double(p21.getPoint(), p22.getPoint());
+    lines.add(wall1);
+    lines.add(wall2);
+    lines.add(wall3);
+    lines.add(wall4);
+
+    along.normalize();
+    along.multiply(collisionDistance);
+    opposite.normalize();
+    opposite.multiply(collisionDistance);
+
+    // add waypoints
+    // play around with cw and acw
+    cw.normalize();
+    cw.multiply(1);
+    acw.normalize();
+    acw.multiply(1);
+    
+    {
+      Point2D point = Vector.addVectors(Vector.addVectors(p11, cw), along).getPoint();
+      Line2D wp = new Line2D.Double(point, point);
+      lines.add(wp);
+    }
+    {
+      Point2D point = Vector.addVectors(Vector.addVectors(p12, acw), along).getPoint();
+      Line2D wp = new Line2D.Double(point, point);
+      lines.add(wp);
+    }
+    {
+      Point2D point = Vector.addVectors(Vector.addVectors(p21, cw), opposite).getPoint();
+      Line2D wp = new Line2D.Double(point, point);
+      lines.add(wp);
+    }
+    {
+      Point2D point = Vector.addVectors(Vector.addVectors(p22, acw), opposite).getPoint();
+      Line2D wp = new Line2D.Double(point, point);
+      lines.add(wp);
+    }
+  }
+
 }
 
 class PointTuple {
