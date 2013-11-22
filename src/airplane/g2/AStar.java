@@ -107,6 +107,58 @@ public class AStar {
 			this.walls.add(wall3);
 			this.walls.add(wall4);
 
+      ////////// perp wall
+      double length = wall.getP1().distance(wall.getP2());
+      log.info("len: " + length);
+      opposite.normalize();
+      opposite.multiply(length/2);
+      acw.normalize();
+      acw.multiply(length/2);
+      cw.normalize();
+      cw.multiply(length/2);
+      Vector perpVec1 = Vector.addVectors(Vector.addVectors(p1, opposite), acw);
+      Vector perpVec2 = Vector.addVectors(Vector.addVectors(p1, opposite), cw);
+      Line2D wallPerp = new Line2D.Double(perpVec1.getPoint(), perpVec2.getPoint());
+      this.walls.add(wallPerp);
+      {
+        Vector p1P = new Vector(wallPerp.getP1());
+        Vector p2P = new Vector(wallPerp.getP2());
+        Vector lineTangentP = new Vector(wallPerp.getP2(), wallPerp.getP1());
+        lineTangentP.normalize();
+        lineTangentP.multiply(safetyDistance);
+        Vector alongP = lineTangentP;
+        Vector oppositeP = lineTangentP.rotateOpposite();
+        Vector cwP = lineTangentP.rotate90Clockwise();
+        Vector acwP = lineTangentP.rotate90AntiClockwise();
+
+        Vector p11P = Vector.addVectors(p1P, cwP);
+        Vector p12P = Vector.addVectors(p1P, acwP);
+        Vector p21P = Vector.addVectors(p2P, cwP);
+        Vector p22P = Vector.addVectors(p2P, acwP);
+        // Add 2 more parallel walls
+        Line2D wall1P = new Line2D.Double(p11P.getPoint(), p21P.getPoint());
+        Line2D wall2P = new Line2D.Double(p12P.getPoint(), p22P.getPoint());
+        this.walls.add(wall1P);
+        this.walls.add(wall2P);
+        log.trace("Wall at (" + wall1P.getX1() + ", " + wall1P.getY1()
+            + ") to (" + wall1P.getX2() + ", " + wall1P.getY2() + ")");
+
+        log.trace("Wall at (" + wall2P.getX1() + ", " + wall2P.getY1()
+            + ") to (" + wall2P.getX2() + ", " + wall2P.getY2() + ")");
+
+        // Add 2 perpendicular walls to enclose the no-fly zone
+        Line2D wall3P = new Line2D.Double(p11P.getPoint(), p12P.getPoint());
+        Line2D wall4P = new Line2D.Double(p21P.getPoint(), p22P.getPoint());
+        log.trace("Wall at (" + wall3P.getX1() + ", " + wall3P.getY1()
+            + ") to (" + wall3P.getX2() + ", " + wall3P.getY2() + ")");
+
+        log.trace("Wall at (" + wall4P.getX1() + ", " + wall4P.getY1()
+            + ") to (" + wall4P.getX2() + ", " + wall4P.getY2() + ")");
+        this.walls.add(wall3P);
+        this.walls.add(wall4P);
+      }
+
+
 			/*
 			 * along.normalize(); along.multiply(waypointDist);
 			 * opposite.normalize(); opposite.multiply(waypointDist);

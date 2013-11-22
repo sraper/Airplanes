@@ -333,15 +333,19 @@ public class Dodger extends airplane.sim.Player {
 															.peekFirst().point);
 											alongPath.normalize();
 											alongPath.multiply(safetyDistance);
+                      Vector oppositePath = alongPath.rotateOpposite();
+											oppositePath.normalize();
+											oppositePath.multiply(safetyDistance/2);
 											Vector planeVector = new Vector(
 													simulatedPlane
 															.getLocation());
+                      planeVector = Vector.addVectors(planeVector, oppositePath);
 											Vector safetyPointVector = Vector
 													.addVectors(planeVector,
 															alongPath);
 											Line2D wall = new Line2D.Double(
-													simulatedPlane
-															.getLocation(),
+													planeVector
+															.getPoint(),
 													safetyPointVector
 															.getPoint());
 											// check if we are getting the same
@@ -438,7 +442,7 @@ public class Dodger extends airplane.sim.Player {
 					bearings[i] = WAITING;
 				} else {
 					Waypoint firstWaypoint = path.peekFirst();
-					if (Math.abs(plane.getLocation().distance(firstWaypoint.point)) <= collisionDistance) {
+					if (Math.abs(plane.getLocation().distance(firstWaypoint.point)) <= 0.5) {
 						if (simulating == false) {
 							logger.trace("plane: " + i + " reached waypoint: "
 									+ firstWaypoint.point);
