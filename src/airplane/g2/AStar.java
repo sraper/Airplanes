@@ -109,7 +109,6 @@ public class AStar {
 
       ////////// perp wall
       double length = wall.getP1().distance(wall.getP2());
-      log.info("len: " + length);
       opposite.normalize();
       opposite.multiply(length/2);
       acw.normalize();

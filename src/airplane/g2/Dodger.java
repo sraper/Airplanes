@@ -36,7 +36,7 @@ public class Dodger extends airplane.sim.Player {
 	private static final int maxSimulationRounds = 200; // prevent infinite
 														// orbiting...
 
-	private double safetyDistance = 7; // TODO: try tweaking this...
+	private double safetyDistance = 5; // TODO: try tweaking this...
 	private boolean simulating;
 	private int currentPlane; // used while simulating
 	private int simulationRound = 0;
@@ -357,15 +357,35 @@ public class Dodger extends airplane.sim.Player {
 											for (Line2D wall2 : walls) {
 												if ((wall.getP1().equals(wall2.getP1()) && wall.getP2().equals(wall2.getP2()))
 														|| (wall.getP1().equals(wall2.getP2()) && wall.getP2().equals(wall2.getP1()))) {
+													logger.info("detect same collision twice. shift wall. num walls: " + walls.size());
+                          logger.info("Wall at (" + wall.getX1() + ", " + wall.getY1()
+                              + ") to (" + wall.getX2() + ", " + wall.getY2() + ")");
+                          logger.info("Wall2 at (" + wall2.getX1() + ", " + wall2.getY1()
+                              + ") to (" + wall2.getX2() + ", " + wall2.getY2() + ")");
+                          oppositePath.normalize();
+                          alongPath.normalize();
+                          oppositePath.multiply(safetyDistance/2);
+                          alongPath.multiply(safetyDistance/2);
+                          planeVector = Vector.addVectors(planeVector, oppositePath);
+                          safetyPointVector = Vector.addVectors(safetyPointVector, alongPath); 
+                          wall = new Line2D.Double(planeVector.getPoint(), safetyPointVector.getPoint());
+                          logger.info("New wall at (" + wall.getX1() + ", " + wall.getY1()
+                              + ") to (" + wall.getX2() + ", " + wall.getY2() + ")");
+												}
+											}
+                      // check new all again
+											for (Line2D wall2 : walls) {
+												if ((wall.getP1().equals(wall2.getP1()) && wall.getP2().equals(wall2.getP2()))
+														|| (wall.getP1().equals(wall2.getP2()) && wall.getP2().equals(wall2.getP1()))) {
 													logger.info("detect same collision twice. skip plane. num walls: " + walls.size());
                           logger.info("Wall at (" + wall.getX1() + ", " + wall.getY1()
                               + ") to (" + wall.getX2() + ", " + wall.getY2() + ")");
                           logger.info("Wall2 at (" + wall2.getX1() + ", " + wall2.getY1()
                               + ") to (" + wall2.getX2() + ", " + wall2.getY2() + ")");
-
 													wait = true;
 												}
 											}
+
                       wallTrace(wall);
 											walls.add(wall);
 										}
@@ -565,12 +585,13 @@ public class Dodger extends airplane.sim.Player {
       lines.add(wp);
     }
     ////////// perp wall
+    double length = wall.getP1().distance(wall.getP2());
     opposite.normalize();
-    opposite.multiply(safetyDistance/2);
+    opposite.multiply(length/2);
     acw.normalize();
-    acw.multiply(safetyDistance/2);
+    acw.multiply(length/2);
     cw.normalize();
-    cw.multiply(safetyDistance/2);
+    cw.multiply(length/2);
     Vector perpVec1 = Vector.addVectors(Vector.addVectors(p1, opposite), acw);
     Vector perpVec2 = Vector.addVectors(Vector.addVectors(p1, opposite), cw);
     Line2D wallPerp = new Line2D.Double(perpVec1.getPoint(), perpVec2.getPoint());
