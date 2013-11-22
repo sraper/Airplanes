@@ -318,7 +318,7 @@ public class Dodger extends airplane.sim.Player {
 										PlaneState simulatedPlaneState = simulatedPlaneStates
 												.get(simulatedPlane.id);
 										if (simulatedPlaneState != null) {
-											logger.trace("collision!"
+											logger.info("collision!"
 													+ " plane "
 													+ currentPlane
 													+ ": "
@@ -351,17 +351,14 @@ public class Dodger extends airplane.sim.Player {
 											// check if we are getting the same
 											// collision again
 											for (Line2D wall2 : walls) {
-												if ((wall.getP1().equals(
-														wall2.getP1()) && wall
-														.getP2().equals(
-																wall2.getP2()))
-														|| (wall.getP1()
-																.equals(wall2
-																		.getP2()) && wall
-																.getP2()
-																.equals(wall2
-																		.getP1()))) {
-													logger.trace("detect same collision twice. skip plane.");
+												if ((wall.getP1().equals(wall2.getP1()) && wall.getP2().equals(wall2.getP2()))
+														|| (wall.getP1().equals(wall2.getP2()) && wall.getP2().equals(wall2.getP1()))) {
+													logger.info("detect same collision twice. skip plane. num walls: " + walls.size());
+                          logger.info("Wall at (" + wall.getX1() + ", " + wall.getY1()
+                              + ") to (" + wall.getX2() + ", " + wall.getY2() + ")");
+                          logger.info("Wall2 at (" + wall2.getX1() + ", " + wall2.getY1()
+                              + ") to (" + wall2.getX2() + ", " + wall2.getY2() + ")");
+
 													wait = true;
 												}
 											}
@@ -443,7 +440,7 @@ public class Dodger extends airplane.sim.Player {
 					bearings[i] = WAITING;
 				} else {
 					Waypoint firstWaypoint = path.peekFirst();
-					if (Math.abs(plane.getLocation().distance(firstWaypoint.point)) <= collisionDistance) {
+					if (Math.abs(plane.getLocation().distance(firstWaypoint.point)) <= 0.5) {
 						if (simulating == false) {
 							logger.trace("plane: " + i + " reached waypoint: "
 									+ firstWaypoint.point);
@@ -563,8 +560,44 @@ public class Dodger extends airplane.sim.Player {
       Line2D wp = new Line2D.Double(point, point);
       lines.add(wp);
     }
-  }
+    ////////// perp wall
+    opposite.normalize();
+    opposite.multiply(collisionDistance/2);
+    acw.normalize();
+    acw.multiply(collisionDistance/2);
+    cw.normalize();
+    cw.multiply(collisionDistance/2);
+    Vector perpVec1 = Vector.addVectors(Vector.addVectors(p1, opposite), acw);
+    Vector perpVec2 = Vector.addVectors(Vector.addVectors(p1, opposite), cw);
+    Line2D wallPerp = new Line2D.Double(perpVec1.getPoint(), perpVec2.getPoint());
+    lines.add(wallPerp);
+    {
+      Vector p1P = new Vector(wallPerp.getP1());
+      Vector p2P = new Vector(wallPerp.getP2());
+      Vector lineTangentP = new Vector(wallPerp.getP2(), wallPerp.getP1());
+      lineTangentP.normalize();
+      lineTangentP.multiply(collisionDistance);
+      Vector alongP = lineTangentP;
+      Vector oppositeP = lineTangentP.rotateOpposite();
+      Vector cwP = lineTangentP.rotate90Clockwise();
+      Vector acwP = lineTangentP.rotate90AntiClockwise();
 
+      Vector p11P = Vector.addVectors(p1P, cwP);
+      Vector p12P = Vector.addVectors(p1P, acwP);
+      Vector p21P = Vector.addVectors(p2P, cwP);
+      Vector p22P = Vector.addVectors(p2P, acwP);
+      // Add 2 more parallel walls
+      Line2D wall1P = new Line2D.Double(p11P.getPoint(), p21P.getPoint());
+      Line2D wall2P = new Line2D.Double(p12P.getPoint(), p22P.getPoint());
+      lines.add(wall1P);
+      lines.add(wall2P);
+      // Add 2 perpendicular walls to enclose the no-fly zone
+      Line2D wall3P = new Line2D.Double(p11P.getPoint(), p12P.getPoint());
+      Line2D wall4P = new Line2D.Double(p21P.getPoint(), p22P.getPoint());
+      lines.add(wall3P);
+      lines.add(wall4P);
+    }
+  }
 }
 
 class PointTuple {
