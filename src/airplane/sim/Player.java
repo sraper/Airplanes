@@ -1,6 +1,7 @@
 
 package airplane.sim;
 
+import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
 
@@ -11,7 +12,8 @@ import java.util.ArrayList;
 public abstract class Player {
 	private GameConfig myConfig;
 	protected boolean continueSimulation = true;
-	
+	protected ArrayList<Line2D> playerLines;
+
 	public void setMyConfig(GameConfig myConfig) {
 		this.myConfig = myConfig;
 	}
@@ -31,6 +33,14 @@ public abstract class Player {
 	{
 		//Do nothing is OK!
 	}
+
+  public ArrayList<Line2D> getPlayerLines() {
+    return this.playerLines;
+  }
+
+  public void setPlayerLines(ArrayList<Line2D> lines) {
+    this.playerLines = lines;
+  }
 	
 	/**
 	 * Called on the player when a new game starts

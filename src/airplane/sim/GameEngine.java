@@ -150,6 +150,7 @@ public final class GameEngine
 			
 			// ask the Player for the new position of the planes
 			board.bearings = curPlayer.updatePlanes(board.getPlanes(), round, board.bearings);
+      board.playerLines = curPlayer.getPlayerLines();
 
 			// NOTE: at this point, the Plane's bearings have not been updated!
 			// that doesn't happen until we call move on each Plane!

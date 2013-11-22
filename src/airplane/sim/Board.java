@@ -1,5 +1,6 @@
 package airplane.sim;
 
+import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
 import java.io.BufferedReader;
 import java.io.File;
@@ -27,6 +28,7 @@ public final class Board {
 	public double[] bearings;
 
 	private Set<Airport> airports;
+	protected ArrayList<Line2D> playerLines;
 
 	public void setAirports(Set<Airport> collectors) {
 		this.airports = collectors;
