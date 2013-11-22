@@ -191,7 +191,6 @@ public class Dodger extends airplane.sim.Player {
 	@Override
 	public double[] updatePlanes(ArrayList<Plane> planes, int round,
 			double[] bearings) {
-    lines.clear();
 		for (Plane p : planes) {
 			if (simulating == false)
 				logger.trace("Start: " + p.getLocation() + ", End: "
@@ -201,6 +200,7 @@ public class Dodger extends airplane.sim.Player {
 		boolean wait = false;
 
 		if (simulating == false) {
+      lines.clear();
 			logger.trace("round: " + round);
 		} else {
 			simulationRound++;
