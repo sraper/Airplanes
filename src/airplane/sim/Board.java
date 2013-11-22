@@ -159,6 +159,7 @@ public final class Board {
 	private void init() {
 		powerUsed = 0;
 		delay = 0;
+		playerLines = null;
 	}
 
 	public boolean inBounds(int x, int y) {

@@ -262,7 +262,6 @@ public final class BoardPanel extends JPanel implements MouseListener,
 		}
 
     if (engine != null & board != null) {
-      // TODO: change this if we want to only show it when the game starts
       if (engine.getCurrentRound() >= 0) {
         if (board.playerLines != null) {
           g2D.setColor(Color.white);

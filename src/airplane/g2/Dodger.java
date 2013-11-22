@@ -477,6 +477,7 @@ public class Dodger extends airplane.sim.Player {
 	
 					bearings[i] = currVec.rotateToward(goalVec, maxBearingDeg)
 							.getBearing();
+          lines.add(new Line2D.Double(plane.getLocation(), plane.getLocation()));
 					state.path = path;
 					if (simulating) {
 						logger.trace("updating simulate state for plane: " + i);

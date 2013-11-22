@@ -323,6 +323,7 @@ public final class GameEngine
 			board.planes = new ArrayList<Plane>();
 			board.powerUsed = 0;
 			board.delay = 0;
+      board.playerLines = null;
 			
 			for (int i=0; i<board.numPlanes; i++) {
 				
