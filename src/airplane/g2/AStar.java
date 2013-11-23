@@ -38,6 +38,7 @@ public class AStar {
 		this.originalVisibilityMap = new HashMap<Waypoint, Set<Waypoint>>();
 		// this.orificeSet = new HashSet<Line2D> ();
 		this.safetyDistance = sDistance;
+	  Set<Point2D> waypointSetTemp = new HashSet<Point2D>();
 
 		// init waypoints
 		for (Line2D wall : inwalls) {
@@ -54,23 +55,10 @@ public class AStar {
 			Vector opposite = lineTangent.rotateOpposite();
 			Vector cw = lineTangent.rotate90Clockwise();
 			Vector acw = lineTangent.rotate90AntiClockwise();
-
-			/*
-			 * Vector triQuad1 = lineTangent.rotate(120); Vector triQuad2 =
-			 * lineTangent.rotate(-120); Vector triQuadOpp1 =
-			 * opposite.rotate(120); Vector triQuadOpp2 = opposite.rotate(-120);
-			 */
-
 			Vector p11 = Vector.addVectors(p1, cw);
 			Vector p12 = Vector.addVectors(p1, acw);
 			Vector p21 = Vector.addVectors(p2, cw);
 			Vector p22 = Vector.addVectors(p2, acw);
-
-			along.normalize();
-			along.multiply(safetyDistance);
-			opposite.normalize();
-			opposite.multiply(safetyDistance);
-
 			// Add 2 more parallel walls
 			Line2D wall1 = new Line2D.Double(p11.getPoint(), p21.getPoint());
 			Line2D wall2 = new Line2D.Double(p12.getPoint(), p22.getPoint());
@@ -93,6 +81,12 @@ public class AStar {
 			this.walls.add(wall3);
 			this.walls.add(wall4);
 
+			along.normalize();
+			along.multiply(safetyDistance);
+			opposite.normalize();
+			opposite.multiply(safetyDistance);
+
+
       ////////// perp wall
       double length = wall.getP1().distance(wall.getP2());
       opposite.normalize();
@@ -105,6 +99,9 @@ public class AStar {
       Vector perpVec2 = Vector.addVectors(Vector.addVectors(p1, opposite), cw);
       Line2D wallPerp = new Line2D.Double(perpVec1.getPoint(), perpVec2.getPoint());
       this.walls.add(wallPerp);
+      log.trace("Wall at (" + wallPerp.getX1() + ", " + wallPerp.getY1()
+          + ") to (" + wallPerp.getX2() + ", " + wallPerp.getY2() + ")");
+
       {
         Vector p1P = new Vector(wallPerp.getP1());
         Vector p2P = new Vector(wallPerp.getP2());
@@ -142,36 +139,36 @@ public class AStar {
         this.walls.add(wall3P);
         this.walls.add(wall4P);
       }
-
 			// add waypoints
 			// play around with cw and acw
 			cw.normalize();
 			cw.multiply(wpDistance);
 			acw.normalize();
 			acw.multiply(wpDistance);
-			addWaypoint(Vector.addVectors(p11, cw), along, lines, false);
-			addWaypoint(Vector.addVectors(p12, acw), along, lines, false);
-			addWaypoint(Vector.addVectors(p21, cw), opposite, lines, false);
-			addWaypoint(Vector.addVectors(p22, acw), opposite, lines, false);
 
-			/*
-			 * along.normalize(); along.multiply(waypointDist);
-			 * opposite.normalize(); opposite.multiply(waypointDist);
-			 * 
-			 * p1 = Vector.addVectors(p1, along); p2 = Vector.addVectors(p2,
-			 * opposite);
-			 * 
-			 * along.normalize(); along.multiply(starDist);
-			 * opposite.normalize(); opposite.multiply(starDist);
-			 * 
-			 * addWaypoint(p1, along, lines, false); addWaypoint(p1, triQuad1,
-			 * lines, false); addWaypoint(p1, triQuad2, lines, false);
-			 * 
-			 * addWaypoint(p2, opposite, lines, false); addWaypoint(p2,
-			 * triQuadOpp1, lines, false); addWaypoint(p2, triQuadOpp2, lines,
-			 * false);
-			 */
+      {
+        Point2D wp = Vector.addVectors(Vector.addVectors(p11,cw), along).getPoint();
+        waypointSetTemp.add(wp);
+      }
+      {
+        Point2D wp = Vector.addVectors(Vector.addVectors(p12,acw), along).getPoint();
+        waypointSetTemp.add(wp);
+      }
+      {
+        opposite.multiply(2);
+        Point2D wp = Vector.addVectors(Vector.addVectors(p21,cw), opposite).getPoint();
+        waypointSetTemp.add(wp);
+      }
+      {
+        Point2D wp = Vector.addVectors(Vector.addVectors(p22,acw), opposite).getPoint();
+        waypointSetTemp.add(wp);
+      }
 		}
+    // add to visibility map
+    for (Point2D wp: waypointSetTemp) {
+      addWaypoint(wp, lines, false);
+    }
+
 		originalWaypointSet.addAll(waypointSet);
 		// remember orifice lines
 		/*
@@ -331,11 +328,11 @@ public class AStar {
 		}
 	}
 
-	Waypoint addWaypoint(Vector p, Vector v, ArrayList<Line2D> lines,
+	Waypoint addWaypoint(Point2D p, ArrayList<Line2D> lines,
 			boolean orificeWaypoint) {
 		Point2D point;
 		Line2D line;
-		point = Vector.addVectors(p, v).getPoint();
+		point = p;
 		// do not add if outside board
 		if (point.getX() > 99 || point.getX() < 1 || point.getY() > 99
 				|| point.getY() < 1)
@@ -348,7 +345,7 @@ public class AStar {
 		Waypoint retVal = addToVisibilityMap(point, orificeWaypoint);
 		waypointSet.add(retVal);
 		log.trace("waypoint at: " + retVal.point);
-		line = new Line2D.Double(p.getPoint(), point);
+		line = new Line2D.Double(p, point);
 		lines.add(line);
 		return retVal;
 	}
