@@ -385,7 +385,8 @@ public class Dodger extends airplane.sim.Player {
 													wait = true;
 												}
 											}
-
+                      logger.info("Wall at (" + wall.getX1() + ", " + wall.getY1()
+                          + ") to (" + wall.getX2() + ", " + wall.getY2() + ")");
                       wallTrace(wall);
 											walls.add(wall);
 										}
@@ -559,33 +560,6 @@ public class Dodger extends airplane.sim.Player {
     opposite.normalize();
     opposite.multiply(collisionDistance);
 
-    // add waypoints
-    // play around with cw and acw
-    cw.normalize();
-    cw.multiply(1);
-    acw.normalize();
-    acw.multiply(1);
-    
-    {
-      Point2D point = Vector.addVectors(Vector.addVectors(p11, cw), along).getPoint();
-      Line2D wp = new Line2D.Double(point, point);
-      lines.add(wp);
-    }
-    {
-      Point2D point = Vector.addVectors(Vector.addVectors(p12, acw), along).getPoint();
-      Line2D wp = new Line2D.Double(point, point);
-      lines.add(wp);
-    }
-    {
-      Point2D point = Vector.addVectors(Vector.addVectors(p21, cw), opposite).getPoint();
-      Line2D wp = new Line2D.Double(point, point);
-      lines.add(wp);
-    }
-    {
-      Point2D point = Vector.addVectors(Vector.addVectors(p22, acw), opposite).getPoint();
-      Line2D wp = new Line2D.Double(point, point);
-      lines.add(wp);
-    }
     ////////// perp wall
     double length = wall.getP1().distance(wall.getP2());
     opposite.normalize();
@@ -624,6 +598,35 @@ public class Dodger extends airplane.sim.Player {
       lines.add(wall3P);
       lines.add(wall4P);
     }
+    // add waypoints
+    // play around with cw and acw
+    cw.normalize();
+    cw.multiply(1);
+    acw.normalize();
+    acw.multiply(1);
+    
+    {
+      Point2D point = Vector.addVectors(Vector.addVectors(p11, cw), along).getPoint();
+      Line2D wp = new Line2D.Double(point, point);
+      lines.add(wp);
+    }
+    {
+      Point2D point = Vector.addVectors(Vector.addVectors(p12, acw), along).getPoint();
+      Line2D wp = new Line2D.Double(point, point);
+      lines.add(wp);
+    }
+    {
+      opposite.multiply(2);
+      Point2D point = Vector.addVectors(Vector.addVectors(p21, cw), opposite).getPoint();
+      Line2D wp = new Line2D.Double(point, point);
+      lines.add(wp);
+    }
+    {
+      Point2D point = Vector.addVectors(Vector.addVectors(p22, acw), opposite).getPoint();
+      Line2D wp = new Line2D.Double(point, point);
+      lines.add(wp);
+    }
+
   }
 }
 
