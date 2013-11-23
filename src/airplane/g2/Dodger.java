@@ -458,7 +458,7 @@ public class Dodger extends airplane.sim.Player {
 					bearings[i] = WAITING;
 				} else {
 					Waypoint firstWaypoint = path.peekFirst();
-					if (Math.abs(plane.getLocation().distance(firstWaypoint.point)) <= 0.5) {
+					if (Math.abs(plane.getLocation().distance(firstWaypoint.point)) <= 1) {
 						if (simulating == false) {
 							logger.trace("plane: " + i + " reached waypoint: "
 									+ firstWaypoint.point);
