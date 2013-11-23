@@ -616,7 +616,6 @@ public class Dodger extends airplane.sim.Player {
       lines.add(wp);
     }
     {
-      opposite.multiply(2);
       Point2D point = Vector.addVectors(Vector.addVectors(p21, cw), opposite).getPoint();
       Line2D wp = new Line2D.Double(point, point);
       lines.add(wp);

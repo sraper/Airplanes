@@ -54,23 +54,10 @@ public class AStar {
 			Vector opposite = lineTangent.rotateOpposite();
 			Vector cw = lineTangent.rotate90Clockwise();
 			Vector acw = lineTangent.rotate90AntiClockwise();
-
-			/*
-			 * Vector triQuad1 = lineTangent.rotate(120); Vector triQuad2 =
-			 * lineTangent.rotate(-120); Vector triQuadOpp1 =
-			 * opposite.rotate(120); Vector triQuadOpp2 = opposite.rotate(-120);
-			 */
-
 			Vector p11 = Vector.addVectors(p1, cw);
 			Vector p12 = Vector.addVectors(p1, acw);
 			Vector p21 = Vector.addVectors(p2, cw);
 			Vector p22 = Vector.addVectors(p2, acw);
-
-			along.normalize();
-			along.multiply(safetyDistance);
-			opposite.normalize();
-			opposite.multiply(safetyDistance);
-
 			// Add 2 more parallel walls
 			Line2D wall1 = new Line2D.Double(p11.getPoint(), p21.getPoint());
 			Line2D wall2 = new Line2D.Double(p12.getPoint(), p22.getPoint());
@@ -92,6 +79,12 @@ public class AStar {
 					+ ") to (" + wall4.getX2() + ", " + wall4.getY2() + ")");
 			this.walls.add(wall3);
 			this.walls.add(wall4);
+
+			along.normalize();
+			along.multiply(safetyDistance);
+			opposite.normalize();
+			opposite.multiply(safetyDistance);
+
 
       ////////// perp wall
       double length = wall.getP1().distance(wall.getP2());
