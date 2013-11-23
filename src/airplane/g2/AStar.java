@@ -155,7 +155,8 @@ public class AStar {
         waypointSetTemp.add(wp);
       }
       {
-        opposite.multiply(2);
+        opposite.normalize();
+        opposite.multiply(safetyDistance);
         Point2D wp = Vector.addVectors(Vector.addVectors(p21,cw), opposite).getPoint();
         waypointSetTemp.add(wp);
       }
