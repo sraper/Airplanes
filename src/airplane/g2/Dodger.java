@@ -318,7 +318,7 @@ public class Dodger extends airplane.sim.Player {
 										PlaneState simulatedPlaneState = simulatedPlaneStates
 												.get(simulatedPlane.id);
 										if (simulatedPlaneState != null) {
-											logger.info("collision!"
+											logger.trace("collision!"
 													+ " plane "
 													+ currentPlane
 													+ ": "
@@ -357,10 +357,10 @@ public class Dodger extends airplane.sim.Player {
 											for (Line2D wall2 : walls) {
 												if ((wall.getP1().equals(wall2.getP1()) && wall.getP2().equals(wall2.getP2()))
 														|| (wall.getP1().equals(wall2.getP2()) && wall.getP2().equals(wall2.getP1()))) {
-													logger.info("detect same collision twice. shift wall. num walls: " + walls.size());
-                          logger.info("Wall at (" + wall.getX1() + ", " + wall.getY1()
+													logger.trace("detect same collision twice. shift wall. num walls: " + walls.size());
+                          logger.trace("Wall at (" + wall.getX1() + ", " + wall.getY1()
                               + ") to (" + wall.getX2() + ", " + wall.getY2() + ")");
-                          logger.info("Wall2 at (" + wall2.getX1() + ", " + wall2.getY1()
+                          logger.trace("Wall2 at (" + wall2.getX1() + ", " + wall2.getY1()
                               + ") to (" + wall2.getX2() + ", " + wall2.getY2() + ")");
                           oppositePath.normalize();
                           alongPath.normalize();
@@ -369,7 +369,7 @@ public class Dodger extends airplane.sim.Player {
                           planeVector = Vector.addVectors(planeVector, oppositePath);
                           safetyPointVector = Vector.addVectors(safetyPointVector, alongPath); 
                           wall = new Line2D.Double(planeVector.getPoint(), safetyPointVector.getPoint());
-                          logger.info("New wall at (" + wall.getX1() + ", " + wall.getY1()
+                          logger.trace("New wall at (" + wall.getX1() + ", " + wall.getY1()
                               + ") to (" + wall.getX2() + ", " + wall.getY2() + ")");
 												}
 											}
@@ -377,15 +377,15 @@ public class Dodger extends airplane.sim.Player {
 											for (Line2D wall2 : walls) {
 												if ((wall.getP1().equals(wall2.getP1()) && wall.getP2().equals(wall2.getP2()))
 														|| (wall.getP1().equals(wall2.getP2()) && wall.getP2().equals(wall2.getP1()))) {
-													logger.info("detect same collision twice. skip plane. num walls: " + walls.size());
-                          logger.info("Wall at (" + wall.getX1() + ", " + wall.getY1()
+													logger.trace("detect same collision twice. skip plane. num walls: " + walls.size());
+                          logger.trace("Wall at (" + wall.getX1() + ", " + wall.getY1()
                               + ") to (" + wall.getX2() + ", " + wall.getY2() + ")");
-                          logger.info("Wall2 at (" + wall2.getX1() + ", " + wall2.getY1()
+                          logger.trace("Wall2 at (" + wall2.getX1() + ", " + wall2.getY1()
                               + ") to (" + wall2.getX2() + ", " + wall2.getY2() + ")");
 													wait = true;
 												}
 											}
-                      logger.info("Wall at (" + wall.getX1() + ", " + wall.getY1()
+                      logger.trace("Wall at (" + wall.getX1() + ", " + wall.getY1()
                           + ") to (" + wall.getX2() + ", " + wall.getY2() + ")");
                       wallTrace(wall);
 											walls.add(wall);
@@ -444,7 +444,7 @@ public class Dodger extends airplane.sim.Player {
 					path = astar.AStarPath(plane.getLocation(),
 							plane.getDestination());
 					if (path == null) {
-						logger.info("plane: " + i + "can't take off yet"
+						logger.trace("plane: " + i + "can't take off yet"
                 + " source: " + plane.getLocation() + " dest: " + plane.getDestination());
 						logger.trace("plane: " + i + "can't take off yet");
 						if (i == currentPlane) {
@@ -616,6 +616,7 @@ public class Dodger extends airplane.sim.Player {
       lines.add(wp);
     }
     {
+      opposite.multiply(2);
       Point2D point = Vector.addVectors(Vector.addVectors(p21, cw), opposite).getPoint();
       Line2D wp = new Line2D.Double(point, point);
       lines.add(wp);
