@@ -168,6 +168,9 @@ public class AStar {
     for (Point2D wp: waypointSetTemp) {
       addWaypoint(wp, lines, false);
     }
+    for (Line2D wall: walls) {
+      this.lines.add(wall);
+    }
 
 		originalWaypointSet.addAll(waypointSet);
 		// remember orifice lines
@@ -229,6 +232,10 @@ public class AStar {
 		 */
 		originalVisibilityMap.putAll(visibilityMap);
 	}
+
+  public ArrayList<Line2D> getPlayerLines () {
+    return lines;
+  }
 
 	public boolean isInLineOfSight(double x, double y, double newX,
 			double newY) {
