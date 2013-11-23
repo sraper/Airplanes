@@ -36,7 +36,7 @@ public class Dodger extends airplane.sim.Player {
 	private static final int maxSimulationRounds = 200; // prevent infinite
 														// orbiting...
 
-	private double safetyDistance = 7; // TODO: try tweaking this...
+	private double safetyDistance = 5; // TODO: try tweaking this...
 	private boolean simulating;
 	private int currentPlane; // used while simulating
 	private int simulationRound = 0;
@@ -443,6 +443,8 @@ public class Dodger extends airplane.sim.Player {
 					path = astar.AStarPath(plane.getLocation(),
 							plane.getDestination());
 					if (path == null) {
+						logger.info("plane: " + i + "can't take off yet"
+                + " source: " + plane.getLocation() + " dest: " + plane.getDestination());
 						logger.trace("plane: " + i + "can't take off yet");
 						if (i == currentPlane) {
 							logger.trace("simulated plane can't take off yet. stop simulation.");

@@ -71,20 +71,6 @@ public class AStar {
 			opposite.normalize();
 			opposite.multiply(safetyDistance);
 
-			// add waypoints
-			// play around with cw and acw
-			cw.normalize();
-			cw.multiply(wpDistance);
-			acw.normalize();
-			acw.multiply(wpDistance);
-
-			Vector nullVector = new Vector(0, 0);
-
-			addWaypoint(Vector.addVectors(p11, cw), along, lines, false);
-			addWaypoint(Vector.addVectors(p12, acw), along, lines, false);
-			addWaypoint(Vector.addVectors(p21, cw), opposite, lines, false);
-			addWaypoint(Vector.addVectors(p22, acw), opposite, lines, false);
-
 			// Add 2 more parallel walls
 			Line2D wall1 = new Line2D.Double(p11.getPoint(), p21.getPoint());
 			Line2D wall2 = new Line2D.Double(p12.getPoint(), p22.getPoint());
@@ -156,6 +142,16 @@ public class AStar {
         this.walls.add(wall3P);
         this.walls.add(wall4P);
       }
+			// add waypoints
+			// play around with cw and acw
+			cw.normalize();
+			cw.multiply(wpDistance);
+			acw.normalize();
+			acw.multiply(wpDistance);
+			addWaypoint(Vector.addVectors(p11, cw), along, lines, false);
+			addWaypoint(Vector.addVectors(p12, acw), along, lines, false);
+			addWaypoint(Vector.addVectors(p21, cw), opposite, lines, false);
+			addWaypoint(Vector.addVectors(p22, acw), opposite, lines, false);
 
 
 			/*
