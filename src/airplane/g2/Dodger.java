@@ -194,7 +194,6 @@ public class Dodger extends airplane.sim.Player {
 						+ p.getDestination());
 		}
 		boolean allDone = true;
-		boolean wait = false;
 
 		if (simulating == false) {
 			logger.trace("round: " + round);
@@ -217,6 +216,7 @@ public class Dodger extends airplane.sim.Player {
 //		}
 
 		for (int i = 0; i < planes.size(); i++) {
+		  boolean wait = false;
 			Plane plane = planes.get(i);
 			PlaneState state;
 			Deque<Waypoint> path = null;
