@@ -143,7 +143,6 @@ public class AStar {
 			acw.multiply(wpDistance);
 			addWaypoint(Vector.addVectors(p11, cw), along, lines, false);
 			addWaypoint(Vector.addVectors(p12, acw), along, lines, false);
-      opposite.multiply(2);
 			addWaypoint(Vector.addVectors(p21, cw), opposite, lines, false);
 			addWaypoint(Vector.addVectors(p22, acw), opposite, lines, false);
 
