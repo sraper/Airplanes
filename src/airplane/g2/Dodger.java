@@ -69,8 +69,8 @@ public class Dodger extends airplane.sim.Player {
 					+ plane.getDepartureTime());
 		}
 		// initial naive sort by path distance
-		// Collections.sort(planes, new PlaneSorter());
-		Collections.sort(planes, new IdealIntersectionSorter(planes));
+		Collections.sort(planes, new PlaneSorter());
+		//Collections.sort(planes, new IdealIntersectionSorter(planes));
 
 		flows = new HashMap<PointTuple, Integer>();
 		for (Plane p : planes) {
