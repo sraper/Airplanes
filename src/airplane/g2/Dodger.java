@@ -35,10 +35,12 @@ public class Dodger extends airplane.sim.Player {
 	private static final double velocity = 1;
 	private static final int maxSimulationRounds = 200; // prevent infinite
 														// orbiting...
+  private static final int maxSimulationCollisions = 5; // speed-up things a bit                          
 
 	private double safetyDistance = 5; // TODO: try tweaking this...
 	private boolean simulating;
 	private int currentPlane; // used while simulating
+	private int collisionCounter; // used while simulating
 	private int simulationRound = 0;
 
   private HashSet<Integer> takenOff;
@@ -76,7 +78,7 @@ public class Dodger extends airplane.sim.Player {
 		//Collections.sort(planes, new IdealIntersectionSorter(planes));
 
 		flows = new HashMap<PointTuple, Integer>();
-		for (Plane p : planes) {
+		/*for (Plane p : planes) {
 			PointTuple pt = new PointTuple(p.getLocation(), p.getDestination());
 			flows.put(pt, flows.containsKey(pt) ? flows.get(pt) + 1 : 1);
 		}
@@ -86,7 +88,7 @@ public class Dodger extends airplane.sim.Player {
 			if (pt.getValue() < 5) {
 				flows.remove(pt.getKey());
 			}
-		}
+		}*/
 
 		setFlowPaths(planes);
 		
@@ -247,6 +249,7 @@ public class Dodger extends airplane.sim.Player {
 				logger.trace("get state for plane: " + i);
 				state = planeStates.get(plane.id);
 				currentPlane = i; // set currentPlane placeholder
+        collisionCounter = 0;
 				// reset walls, simulation runs with existing walls
 				walls = new HashSet<Line2D>();
 			}
@@ -297,6 +300,12 @@ public class Dodger extends airplane.sim.Player {
 						}
 						if (result.getReason() == SimulationResult.TOO_CLOSE) {
 							logger.trace("collision detected!");
+              collisionCounter++;
+              if (collisionCounter > maxSimulationCollisions) {
+                collisionCounter = 0;
+                wait = true;
+                break;
+              }
 							int origWallNum = walls.size();
 							ArrayList<Plane> simulatedPlanes = result
 									.getPlanes();
