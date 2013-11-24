@@ -33,7 +33,7 @@ public class Dodger extends airplane.sim.Player {
 	private static final double velocity = 1;
 	private static final int maxSimulationRounds = 200; // prevent infinite
 														// orbiting...
-  private static final int maxSimulationCollisions = 5; // speed-up things a bit                          
+  private static final int maxSimulationCollisions = 8; // speed-up things a bit                          
 
 	private double safetyDistance = 5; // TODO: try tweaking this...
 	private boolean simulating;
