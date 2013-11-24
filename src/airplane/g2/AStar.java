@@ -81,20 +81,15 @@ public class AStar {
 			this.walls.add(wall3);
 			this.walls.add(wall4);
 
-			along.normalize();
-			along.multiply(safetyDistance);
-			opposite.normalize();
-			opposite.multiply(safetyDistance);
-
 
       ////////// perp wall
       double length = wall.getP1().distance(wall.getP2());
       opposite.normalize();
       opposite.multiply(length/2);
       acw.normalize();
-      acw.multiply(length/2);
+      acw.multiply(safetyDistance/2);
       cw.normalize();
-      cw.multiply(length/2);
+      cw.multiply(safetyDistance/2);
       Vector perpVec1 = Vector.addVectors(Vector.addVectors(p1, opposite), acw);
       Vector perpVec2 = Vector.addVectors(Vector.addVectors(p1, opposite), cw);
       Line2D wallPerp = new Line2D.Double(perpVec1.getPoint(), perpVec2.getPoint());
@@ -105,9 +100,19 @@ public class AStar {
       {
         Vector p1P = new Vector(wallPerp.getP1());
         Vector p2P = new Vector(wallPerp.getP2());
+        along.normalize();
+        along.multiply(safetyDistance);
+        opposite.normalize();
+        opposite.multiply(safetyDistance);
+        cw.normalize();
+        cw.multiply(wpDistance);
+        acw.normalize();
+        acw.multiply(wpDistance);
+        double wplen = Vector.addVectors(Vector.addVectors(p11,cw), along).getPoint().distance
+          (Vector.addVectors(Vector.addVectors(p21,cw), opposite).getPoint());
         Vector lineTangentP = new Vector(wallPerp.getP2(), wallPerp.getP1());
         lineTangentP.normalize();
-        lineTangentP.multiply(safetyDistance);
+        lineTangentP.multiply(0.8*wplen/2);
         Vector alongP = lineTangentP;
         Vector oppositeP = lineTangentP.rotateOpposite();
         Vector cwP = lineTangentP.rotate90Clockwise();
@@ -141,6 +146,11 @@ public class AStar {
       }
 			// add waypoints
 			// play around with cw and acw
+			along.normalize();
+			along.multiply(safetyDistance);
+			opposite.normalize();
+			opposite.multiply(safetyDistance);
+
 			cw.normalize();
 			cw.multiply(wpDistance);
 			acw.normalize();
@@ -318,23 +328,22 @@ public class AStar {
 			return true;
 	}
 
-	public double GetAStarDistance(Point2D source, Point2D target) {
+	public double getAStarDistance(Point2D source, Point2D target) {
 		if (isInLineOfSight(source, target)) {
 			return source.distance(target);
 		}
 		Deque<Waypoint> path = AStarPath(source, target);
+    return getPathLength(path);
+	}
+
+  public static double getPathLength (Deque<Waypoint> path) {
 		if (path != null) {
 			Waypoint waypointLast = path.peekLast();
-			/*
-			 * Waypoint waypointFirst = path.peekFirst(); return
-			 * (waypointLast.point.distance(target) +
-			 * waypointFirst.point.distance(source) + GetPathDistance (path));
-			 */
 			return waypointLast.storedSourceDistance;
 		} else {
-			return 99;
+			return 200;
 		}
-	}
+  }
 
 	Waypoint addWaypoint(Point2D p, ArrayList<Line2D> lines,
 			boolean orificeWaypoint) {

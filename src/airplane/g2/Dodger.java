@@ -443,6 +443,14 @@ public class Dodger extends airplane.sim.Player {
           this.lines.addAll(astar.getPlayerLines());
 					path = astar.AStarPath(plane.getLocation(),
 							plane.getDestination());
+          /*if (path != null) {
+            // check path length
+            if (AStar.getPathLength(path) > Math.abs(plane.getLocation().distance(plane.getDestination()))*2) {
+              logger.info("path length too long. wait it out. len: " + AStar.getPathLength(path));
+              path = null;
+            }
+          }*/
+
 					if (path == null) {
 						logger.trace("plane: " + i + "can't take off yet"
                 + " source: " + plane.getLocation() + " dest: " + plane.getDestination());
