@@ -339,7 +339,7 @@ public class Dodger extends airplane.sim.Player {
 											alongPath.multiply(safetyDistance);
                       Vector oppositePath = alongPath.rotateOpposite();
 											oppositePath.normalize();
-											oppositePath.multiply(safetyDistance/2);
+											oppositePath.multiply(collisionDistance/2);
 											Vector planeVector = new Vector(
 													simulatedPlane
 															.getLocation());
