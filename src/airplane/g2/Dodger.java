@@ -335,7 +335,7 @@ public class Dodger extends airplane.sim.Player {
 											alongPath.multiply(safetyDistance);
                       Vector oppositePath = alongPath.rotateOpposite();
 											oppositePath.normalize();
-											oppositePath.multiply(safetyDistance/2);
+											oppositePath.multiply(collisionDistance/2);
 											Vector planeVector = new Vector(
 													simulatedPlane
 															.getLocation());
@@ -436,6 +436,14 @@ public class Dodger extends airplane.sim.Player {
 					AStar astar = new AStar(walls, collisionDistance);
 					path = astar.AStarPath(plane.getLocation(),
 							plane.getDestination());
+          /*if (path != null) {
+            // check path length
+            if (AStar.getPathLength(path) > Math.abs(plane.getLocation().distance(plane.getDestination()))*2) {
+              logger.info("path length too long. wait it out. len: " + AStar.getPathLength(path));
+              path = null;
+            }
+          }*/
+
 					if (path == null) {
 						logger.trace("plane: " + i + "can't take off yet");
 						if (i == currentPlane) {
