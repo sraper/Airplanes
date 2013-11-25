@@ -47,6 +47,8 @@ public class Dodger extends airplane.sim.Player {
 	
 	private HashMap<PointTuple, Integer> flows;
 
+  private ArrayList<PointTuple> unreachableFlows;
+
 	@Override
 	public String getName() {
 		return "Dodger";
@@ -64,6 +66,7 @@ public class Dodger extends airplane.sim.Player {
 		planeStates = new HashMap<Integer, PlaneState>();
 		walls = new HashSet<Line2D>();
     takenOff = new HashSet<Integer>();
+    unreachableFlows = new ArrayList<PointTuple>();
 		
 		for (int i = 0; i < planes.size(); i++) {
 			Plane plane = planes.get(i);
@@ -201,6 +204,7 @@ public class Dodger extends airplane.sim.Player {
 		}
 		boolean allDone = true;
 		if (simulating == false) {
+      unreachableFlows.clear();
       lines.clear();
 			logger.trace("round: " + round);
 		} else {
@@ -268,6 +272,14 @@ public class Dodger extends airplane.sim.Player {
 			if (path == null) { // need to choose path for this plane
 				logger.trace("path is null for plane: " + i);
 				if (simulating == false) {
+          PointTuple tuple = new PointTuple(plane.getLocation(), plane.getDestination());
+          for (PointTuple utuple : unreachableFlows) {
+            if ((tuple.a.equals(utuple.a)) && (tuple.b.equals(utuple.b))) {
+              logger.trace("source-destination pair unreachable at this time. skip plane: " + i);
+              wait = true;
+              break;
+            }
+          }
 					logger.trace("start simulation plane: " + currentPlane);
 					// detect collision points and place walls
 					SimulationResult result;
@@ -421,31 +433,34 @@ public class Dodger extends airplane.sim.Player {
 							break;
 						}
 					}
+
+          if (wait != true) {
+            // path is available, retrieve from simulated state
+            logger.trace("no collisions detected. retrieving path for plane: "
+                + i);
+            ArrayList<Plane> simulatedPlanes = result.getPlanes();
+            Plane simulatedSelfPlane = simulatedPlanes
+                .get(currentPlane);
+            PlaneState simulatedPlaneState = simulatedPlaneStates
+                .get(simulatedSelfPlane.id);
+            if (simulatedPlaneState != null) {
+              path = simulatedPlaneState.fullPath;
+              state.path = path;
+              state.fullPath = new ArrayDeque<Waypoint>(path);
+            } else {
+              logger.trace("path is null, destination unreachable for plane " + i);
+              wait = true;
+            }
+          }
+
 					if (wait == true) {
 						logger.trace("destination unreachable for plane " + i);
-						continue;
-					}
-
-					// path is available, retrieve from simulated state
-					logger.trace("no collisions detected. retrieving path for plane: "
-							+ i);
-					ArrayList<Plane> simulatedPlanes = result.getPlanes();
-					Plane simulatedSelfPlane = simulatedPlanes
-							.get(currentPlane);
-					PlaneState simulatedPlaneState = simulatedPlaneStates
-							.get(simulatedSelfPlane.id);
-					if (simulatedPlaneState != null) {
-						path = simulatedPlaneState.fullPath;
-						state.path = path;
-						state.fullPath = new ArrayDeque<Waypoint>(path);
-					} else {
-						logger.trace("path is null, destination unreachable for plane " + i);
-						wait = true;
+            unreachableFlows.add(tuple);
 						continue;
 					}
 				}
 
-				if (simulating == true) { // run a-star only in simulation mode
+				if (simulating == true && i == currentPlane) { // run a-star only in simulation mode
 											// to make it deterministic
 					logger.trace("calculate a-star in simulation, plane " + i);
 					AStar astar = new AStar(walls, collisionDistance);
@@ -455,7 +470,7 @@ public class Dodger extends airplane.sim.Player {
           /*if (path != null) {
             // check path length
             if (AStar.getPathLength(path) > Math.abs(plane.getLocation().distance(plane.getDestination()))*2) {
-              logger.info("path length too long. wait it out. len: " + AStar.getPathLength(path));
+              logger.trace("path length too long. wait it out. len: " + AStar.getPathLength(path));
               path = null;
             }
           }*/
@@ -463,12 +478,10 @@ public class Dodger extends airplane.sim.Player {
 					if (path == null) {
 						logger.trace("plane: " + i + "can't take off yet"
                 + " source: " + plane.getLocation() + " dest: " + plane.getDestination());
-						logger.trace("plane: " + i + "can't take off yet");
-						if (i == currentPlane) {
-							logger.trace("simulated plane can't take off yet. stop simulation.");
-							// can't take-off yet. try later
-							stopSimulation();
-						}
+						logger.trace("simulated plane can't take off yet. stop simulation.");
+            wait = true;
+						// can't take-off yet. try later
+						stopSimulation();
 						// destination is unreachable at this time.
 						// some other plane is landing/taking-off?
 						continue;
@@ -482,6 +495,14 @@ public class Dodger extends airplane.sim.Player {
 			if (path != null) {
 				if(bearings[i] == WAITING && planeTooClose(plane, planes, bearings)) {
 					bearings[i] = WAITING;
+          if (simulating == true && i == currentPlane) {
+            wait = true;
+						// can't take-off yet. try later
+						stopSimulation();
+						// destination is unreachable at this time.
+						// some other plane is landing/taking-off?
+						continue;
+          }
 				} else {
 					Waypoint firstWaypoint = path.peekFirst();
 					if (Math.abs(plane.getLocation().distance(firstWaypoint.point)) <= 1) {
