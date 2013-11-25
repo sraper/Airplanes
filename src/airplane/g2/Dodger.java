@@ -33,12 +33,15 @@ public class Dodger extends airplane.sim.Player {
 	private static final double velocity = 1;
 	private static final int maxSimulationRounds = 200; // prevent infinite
 														// orbiting...
-  private static final int maxSimulationCollisions = 8; // speed-up things a bit                          
+  private static final int maxSimulationCollisions = 20; // speed-up things a bit                          
 
+  private double maxDetourFactor = 2.5;
 	private double safetyDistance = 5; // TODO: try tweaking this...
 	private boolean simulating;
 	private int currentPlane; // used while simulating
 	private int collisionCounter; // used while simulating
+  private double destDistance; // st. line distance to destination
+  private boolean wait = false;
 	private int simulationRound = 0;
 
   private HashSet<Integer> takenOff;
@@ -222,7 +225,6 @@ public class Dodger extends airplane.sim.Player {
 //		}
 
 		for (int i = 0; i < planes.size(); i++) {
-		  boolean wait = false;
 			Plane plane = planes.get(i);
 			PlaneState state;
 			Deque<Waypoint> path = null;
@@ -247,8 +249,10 @@ public class Dodger extends airplane.sim.Player {
 				state = simulatedPlaneStates.get(plane.id);
 			} else {
 				logger.trace("get state for plane: " + i);
+		    wait = false;
 				state = planeStates.get(plane.id);
 				currentPlane = i; // set currentPlane placeholder
+        destDistance = Math.abs(plane.getLocation().distance(plane.getDestination()));
         collisionCounter = 0;
 				// reset walls, simulation runs with existing walls
 				walls = new HashSet<Line2D>();
@@ -402,6 +406,8 @@ public class Dodger extends airplane.sim.Player {
 													wait = true;
 												}
 											}
+                      logger.trace("Wall at (" + wall.getX1() + ", " + wall.getY1()
+                          + ") to (" + wall.getX2() + ", " + wall.getY2() + ")");
 											walls.add(wall);
 										}
 									}
@@ -460,13 +466,13 @@ public class Dodger extends airplane.sim.Player {
 					AStar astar = new AStar(walls, collisionDistance);
 					path = astar.AStarPath(plane.getLocation(),
 							plane.getDestination());
-          /*if (path != null) {
+          if (path != null) {
             // check path length
-            if (AStar.getPathLength(path) > Math.abs(plane.getLocation().distance(plane.getDestination()))*2) {
+            if (AStar.getPathLength(path) > destDistance*maxDetourFactor) {
               logger.trace("path length too long. wait it out. len: " + AStar.getPathLength(path));
               path = null;
             }
-          }*/
+          }
 
 					if (path == null) {
 						logger.trace("plane: " + i + "can't take off yet"
@@ -497,6 +503,17 @@ public class Dodger extends airplane.sim.Player {
 						continue;
           }
 				} else {
+          if (simulating == true && i == currentPlane) {
+            // check whether we need to abort simulation
+            double distanceCovered = simulationRound*velocity;
+            if (distanceCovered > destDistance*maxDetourFactor) {
+              logger.trace("plane seems to be orbiting. abort simulation.");
+              wait = true;
+              stopSimulation();
+              continue;
+            }
+          }
+
 					Waypoint firstWaypoint = path.peekFirst();
 					if (Math.abs(plane.getLocation().distance(firstWaypoint.point)) <= 1) {
 						if (simulating == false) {
