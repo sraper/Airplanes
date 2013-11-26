@@ -128,7 +128,7 @@ public class Dodger extends airplane.sim.Player {
 		myset2.addAll(flows.entrySet());
 		Collections.sort(myset2, new FlowEntrySorter());
 
-		double flowsafety = this.collisionDistance + 0.1;
+		double flowsafety = this.collisionDistance;
 
     int totalFlows = myset2.size();
     int flowsSetup = 0;
