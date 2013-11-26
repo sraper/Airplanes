@@ -155,8 +155,10 @@ public class Dodger extends airplane.sim.Player {
             boolean cancelFlow = false;
             for(Waypoint w : dq) {
               end = tempdq.removeFirst().point;
+              Line2D newWall = new Line2D.Double(start, end);
               for (Line2D wall: walls) {
-                if (Math.abs(wall.ptSegDist(start)) <= flowsafety && Math.abs(wall.ptSegDist(end)) <= flowsafety) {
+                if ((Math.abs(wall.ptSegDist(start)) <= flowsafety && Math.abs(wall.ptSegDist(end)) <= flowsafety)
+                    || (Math.abs(newWall.ptSegDist(wall.getP1())) <= flowsafety || Math.abs(newWall.ptSegDist(wall.getP2())) <= flowsafety)) {
                   cancelFlow = true;
                   break;
                 }

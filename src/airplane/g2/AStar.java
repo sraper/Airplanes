@@ -393,6 +393,23 @@ public class AStar {
 			path.addFirst(targetWP);
 			return path;
 		}
+    
+    // add new waypoints
+    Vector wpVector = new Vector (safetyDistance, 0);
+    Vector sourceVector = new Vector (source);
+    Vector targetVector = new Vector (target);
+    for (int angle = 0; angle <= 360; angle = angle + 15) {
+      Vector rotated = wpVector.rotate(angle);
+      {
+        Point2D wp = Vector.addVectors(sourceVector, rotated).getPoint();
+        addWaypoint(wp, lines, false);
+      }
+      {
+        Point2D wp = Vector.addVectors(targetVector, rotated).getPoint();
+        addWaypoint(wp, lines, false);
+      }
+    }
+
 		// revert to original waypointSet and visibilityMap
 		waypointSet = new HashSet<Waypoint>();
 		visibilityMap = new HashMap<Waypoint, Set<Waypoint>>();
