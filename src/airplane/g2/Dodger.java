@@ -159,8 +159,10 @@ public class Dodger extends airplane.sim.Player {
             boolean cancelFlow = false;
             for(Waypoint w : dq) {
               end = tempdq.removeFirst().point;
+              Line2D newWall = new Line2D.Double(start, end);
               for (Line2D wall: walls) {
-                if (Math.abs(wall.ptSegDist(start)) <= flowsafety && Math.abs(wall.ptSegDist(end)) <= flowsafety) {
+                if ((Math.abs(wall.ptSegDist(start)) <= flowsafety && Math.abs(wall.ptSegDist(end)) <= flowsafety)
+                    || (Math.abs(newWall.ptSegDist(wall.getP1())) <= flowsafety || Math.abs(newWall.ptSegDist(wall.getP2())) <= flowsafety)) {
                   cancelFlow = true;
                   break;
                 }
@@ -303,7 +305,7 @@ public class Dodger extends airplane.sim.Player {
 				// skip
 				continue;
 			} else if (bearings[i] == WAITING && simulating && !takenOff.contains(i) && i != currentPlane 
-          && (state.path == null || (state.path != null && flowPlane))) {
+          && (state.path == null /*|| (state.path != null && flowPlane)*/)) {
         logger.trace("not taking off plane: " + i + " in simulation"
             + " current plane: " + currentPlane);
         // do not take-off any new planes in simulation except the
@@ -528,9 +530,9 @@ public class Dodger extends airplane.sim.Player {
           if (path == null) {
             logger.trace("calculate a-star in simulation, plane " + i);
             AStar astar = new AStar(walls, collisionDistance, true);
-            this.lines.addAll(astar.getPlayerLines());
             path = astar.AStarPath(plane.getLocation(),
                 plane.getDestination());
+            this.lines.addAll(astar.getPlayerLines());
             if (path != null) {
               // check path length
               if (AStar.getPathLength(path) > destDistance*maxDetourFactor) {
