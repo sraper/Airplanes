@@ -133,34 +133,53 @@ public class Dodger extends airplane.sim.Player {
 		myset2.addAll(flows.entrySet());
 		Collections.sort(myset2, new FlowEntrySorter());
 
-		double flowsafety = this.safetyDistance;
-		
-		for (Entry<PointTuple, Integer> pt : myset2) {
-      logger.info("Running a-star for flow");
-			AStar as = new AStar(walls, flowsafety, false);
-			Point2D p1 = pt.getKey().a;
-			Point2D p2 = pt.getKey().b;
-      Deque<Waypoint> dq = as.AStarPath(p1, p2);
-      if (dq != null) {
-        for (Plane p : planes) {
-          if(p.getLocation().equals(p1) && p.getDestination().equals(p2)) {
-            PlaneState ps = new PlaneState();
-            ps.fullPath = new ArrayDeque<Waypoint>(dq);
-            ps.path = new ArrayDeque<Waypoint>();
-            ps.path.addAll(ps.fullPath);
-            ps.target = p2;
-            planeStates.put(p.id, ps);
+		double flowsafety = this.collisionDistance + 0.1;
+
+    int totalFlows = myset2.size();
+    int flowsSetup = 0;
+    int currentNumWP = 1;
+    Set<Map.Entry<PointTuple, Integer>> myset3 = new HashSet<Map.Entry<PointTuple, Integer>>();
+	
+    while (flowsSetup != totalFlows) {  
+      for (Entry<PointTuple, Integer> pt : myset2) {
+        if (!myset3.contains(pt)) {
+          logger.trace("Running a-star for flow");
+          AStar as = new AStar(walls, flowsafety, false);
+          Point2D p1 = pt.getKey().a;
+          Point2D p2 = pt.getKey().b;
+          Deque<Waypoint> dq = as.AStarPath(p1, p2);
+          if (dq != null) {
+            if (dq.size() > currentNumWP) {
+              continue; // skip this for now
+            }
+            flowsSetup++;
+            myset3.add(pt);
+            for (Plane p : planes) {
+              if(p.getLocation().equals(p1) && p.getDestination().equals(p2)) {
+                PlaneState ps = new PlaneState();
+                ps.fullPath = new ArrayDeque<Waypoint>(dq);
+                ps.path = new ArrayDeque<Waypoint>();
+                ps.path.addAll(ps.fullPath);
+                ps.target = p2;
+                planeStates.put(p.id, ps);
+              }
+            }
+            Point2D start = p1;
+            Point2D end;
+            for(Waypoint w : dq) {
+              end = dq.removeFirst().point;
+              walls.add(new Line2D.Double(start, end));
+              start = end;
+            }
+          } else {
+            flowsSetup++;
+            myset3.add(pt);
           }
         }
-        Point2D start = p1;
-        Point2D end;
-        for(Waypoint w : dq) {
-          end = dq.removeFirst().point;
-          walls.add(new Line2D.Double(start, end));
-          start = end;
-        }
-			}
-		}
+      }
+      // increment waypoints
+      currentNumWP++;
+    }
 
     { // run one more time for tracer
 			AStar as = new AStar(walls, flowsafety, false);
