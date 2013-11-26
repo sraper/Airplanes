@@ -36,7 +36,7 @@ public class Dodger extends airplane.sim.Player {
 	private static final double velocity = 1;
 	private static final int maxSimulationRounds = 200; // prevent infinite
 														// orbiting...
-  private static final int maxSimulationCollisions = 20; // speed-up things a bit                          
+  private static final int maxSimulationCollisions = 25; // speed-up things a bit                          
 
   private double maxDetourFactor = 2.5;
 	private double safetyDistance = 5; // TODO: try tweaking this...
@@ -162,7 +162,7 @@ public class Dodger extends airplane.sim.Player {
               Line2D newWall = new Line2D.Double(start, end);
               for (Line2D wall: walls) {
                 if ((Math.abs(wall.ptSegDist(start)) <= flowsafety && Math.abs(wall.ptSegDist(end)) <= flowsafety)
-                    || (Math.abs(newWall.ptSegDist(wall.getP1())) <= flowsafety || Math.abs(newWall.ptSegDist(wall.getP2())) <= flowsafety)) {
+                    /*|| (Math.abs(newWall.ptSegDist(wall.getP1())) <= flowsafety || Math.abs(newWall.ptSegDist(wall.getP2())) <= flowsafety)*/) {
                   cancelFlow = true;
                   break;
                 }
@@ -186,9 +186,29 @@ public class Dodger extends airplane.sim.Player {
             }
             start = p1;
             end = null;
-            for(Waypoint w : dq) {
+            while (dq.size() != 0) {
               end = dq.removeFirst().point;
-              walls.add(new Line2D.Double(start, end));
+              Point2D lineStart = start;
+              Point2D lineEnd = end;
+              if (start == p1) {
+                // special treatment for start
+                Vector alongPath = new Vector(start, end);
+                Vector oppositePath = alongPath.rotateOpposite();
+                oppositePath.normalize();
+                oppositePath.multiply(collisionDistance/2);
+                Vector startVector = Vector.addVectors(new Vector(start), oppositePath);
+                lineStart = startVector.getPoint();
+              }
+              // treat final segment
+              if (dq.size() == 0) {
+                  Vector alongPath = new Vector(end, start);
+                  Vector oppositePath = alongPath.rotateOpposite();
+                  oppositePath.normalize();
+                  oppositePath.multiply(collisionDistance/2);
+                  Vector endVector = Vector.addVectors(new Vector(end), oppositePath);
+                  lineEnd = endVector.getPoint();
+              }
+              walls.add(new Line2D.Double(lineStart, lineEnd));
               start = end;
             }
           } else {
