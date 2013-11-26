@@ -129,24 +129,10 @@ public class Dodger extends airplane.sim.Player {
 		double flowsafety = this.safetyDistance + .1;
 		
 		for (Entry<PointTuple, Integer> pt : myset2) {
-			AStar as = new AStar(walls, flowsafety);
+			AStar as = new AStar(walls, flowsafety, false);
 			Point2D p1 = pt.getKey().a;
 			Point2D p2 = pt.getKey().b;
-//			if(as.isInLineOfSight(p1.getX(),p1.getY(), p2.getX(), p2.getY())) {
-//				for (Plane p : planes) {
-//					if(p.getLocation().equals(p1) && p.getDestination().equals(p2)) {
-//						PlaneState ps = new PlaneState();
-//						ps.fullPath = as.AStarPath(p1, p2);
-//						ps.path = new ArrayDeque<Waypoint>();
-//						ps.path.addAll(ps.fullPath);
-//						ps.target = p2;
-//						planeStates.put(p.id, ps);
-//					}
-//				}
-//				walls.add(new Line2D.Double(p1, p2));
-//			} else {
-			
-			if (!myset2.contains(new PointTuple(p2, p1))) {
+			/*if (!myset2.contains(new PointTuple(p2, p1)))*/ {
 			
 				Deque<Waypoint> dq = as.AStarPath(p1, p2);
 				if (dq != null) {
@@ -477,7 +463,7 @@ public class Dodger extends airplane.sim.Player {
 											// to make it deterministic
           if (path == null) {
             logger.trace("calculate a-star in simulation, plane " + i);
-            AStar astar = new AStar(walls, collisionDistance);
+            AStar astar = new AStar(walls, collisionDistance, true);
             path = astar.AStarPath(plane.getLocation(),
                 plane.getDestination());
             if (path != null) {
