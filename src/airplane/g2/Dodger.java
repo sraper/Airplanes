@@ -44,9 +44,9 @@ public class Dodger extends airplane.sim.Player {
 	private int currentPlane; // used while simulating
 	private int collisionCounter; // used while simulating
   private double destDistance; // st. line distance to destination
+  private boolean flowPlane = false;
   private boolean wait = false;
 	private int simulationRound = 0;
-
   private HashSet<Integer> takenOff;
 	
 	private HashMap<PointTuple, Integer> flows;
@@ -261,6 +261,15 @@ public class Dodger extends airplane.sim.Player {
         collisionCounter = 0;
 				// reset walls, simulation runs with existing walls
 				walls = new HashSet<Line2D>();
+        if (state != null) {
+          if (state.path != null) {
+            flowPlane = true;
+          } else {
+            flowPlane = false;
+          }
+        } else {
+          flowPlane = false;
+        }
 			}
 
 			if (state == null) {
@@ -275,7 +284,8 @@ public class Dodger extends airplane.sim.Player {
 			if (round < plane.getDepartureTime() || bearings[i] == FINISHED) {
 				// skip
 				continue;
-			} else if (bearings[i] == WAITING && simulating && !takenOff.contains(i) && i != currentPlane && state.path == null) {
+			} else if (bearings[i] == WAITING && simulating && !takenOff.contains(i) && i != currentPlane 
+          && (state.path == null || (state.path != null && flowPlane))) {
         logger.trace("not taking off plane: " + i + " in simulation"
             + " current plane: " + currentPlane);
         // do not take-off any new planes in simulation except the
@@ -457,6 +467,12 @@ public class Dodger extends airplane.sim.Player {
 							wait = true;
 							logger.trace("simulation end reason: "
 									+ result.getReason());
+              // plane went out of bound?
+              if (result.getReason() == SimulationResult.OUT_OF_BOUNDS) {
+                path = null;
+                state.path = null;
+                state.fullPath = null;
+              }
 							break;
 						}
 					}
@@ -529,6 +545,8 @@ public class Dodger extends airplane.sim.Player {
 				if(bearings[i] == WAITING && planeTooClose(plane, planes, bearings)) {
 					bearings[i] = WAITING;
           if (simulating == true && i == currentPlane) {
+            logger.trace("too close. round " + round
+                + " plane: " + i);
             wait = true;
 						// can't take-off yet. try later
 						stopSimulation();
@@ -574,7 +592,8 @@ public class Dodger extends airplane.sim.Player {
 					}
 
           if (simulating == false) {
-            takenOff.add(i);
+            logger.trace("taken off: " + i);
+            takenOff.add(i); 
           }
 
 					Vector goalVec = new Vector(calculateBearing(
