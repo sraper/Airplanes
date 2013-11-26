@@ -152,8 +152,26 @@ public class Dodger extends airplane.sim.Player {
             if (dq.size() > currentNumWP) {
               continue; // skip this for now
             }
+            // check whether we are enclosed in some other box
+            ArrayDeque<Waypoint> tempdq = new ArrayDeque<Waypoint>(dq);
+            Point2D start = p1;
+            Point2D end;
+            boolean cancelFlow = false;
+            for(Waypoint w : dq) {
+              end = tempdq.removeFirst().point;
+              for (Line2D wall: walls) {
+                if (Math.abs(wall.ptSegDist(start)) <= flowsafety && Math.abs(wall.ptSegDist(end)) <= flowsafety) {
+                  cancelFlow = true;
+                  break;
+                }
+              }
+              start = end;
+            }
             flowsSetup++;
             myset3.add(pt);
+            if (cancelFlow == true) {
+              continue;
+            }
             for (Plane p : planes) {
               if(p.getLocation().equals(p1) && p.getDestination().equals(p2)) {
                 PlaneState ps = new PlaneState();
@@ -164,8 +182,8 @@ public class Dodger extends airplane.sim.Player {
                 planeStates.put(p.id, ps);
               }
             }
-            Point2D start = p1;
-            Point2D end;
+            start = p1;
+            end = null;
             for(Waypoint w : dq) {
               end = dq.removeFirst().point;
               walls.add(new Line2D.Double(start, end));
