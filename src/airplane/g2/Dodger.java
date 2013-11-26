@@ -305,7 +305,7 @@ public class Dodger extends airplane.sim.Player {
 				// skip
 				continue;
 			} else if (bearings[i] == WAITING && simulating && !takenOff.contains(i) && i != currentPlane 
-          && (state.path == null /*|| (state.path != null && flowPlane)*/)) {
+          && (state.path == null || (state.path != null && flowPlane))) {
         logger.trace("not taking off plane: " + i + " in simulation"
             + " current plane: " + currentPlane);
         // do not take-off any new planes in simulation except the
