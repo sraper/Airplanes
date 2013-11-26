@@ -23,6 +23,7 @@ public class Dodger extends airplane.sim.Player {
 	private Map<Integer, PlaneState> planeStates;
 	private Map<Integer, PlaneState> simulatedPlaneStates;
 	private Set<Line2D> walls;
+	private Set<Line2D> flowWalls;
 
   private ArrayList<Line2D> lines;
 
@@ -68,6 +69,7 @@ public class Dodger extends airplane.sim.Player {
 		simulating = false;
 		planeStates = new HashMap<Integer, PlaneState>();
 		walls = new HashSet<Line2D>();
+		flowWalls = new HashSet<Line2D>();
     takenOff = new HashSet<Integer>();
     unreachableFlows = new ArrayList<PointTuple>();
 		
@@ -132,25 +134,11 @@ public class Dodger extends airplane.sim.Player {
 		double flowsafety = this.safetyDistance + .1;
 		
 		for (Entry<PointTuple, Integer> pt : myset2) {
+      logger.info("Running a-star for flow");
 			AStar as = new AStar(walls, flowsafety);
-      this.lines.addAll(as.getPlayerLines());
 			Point2D p1 = pt.getKey().a;
 			Point2D p2 = pt.getKey().b;
-//			if(as.isInLineOfSight(p1.getX(),p1.getY(), p2.getX(), p2.getY())) {
-//				for (Plane p : planes) {
-//					if(p.getLocation().equals(p1) && p.getDestination().equals(p2)) {
-//						PlaneState ps = new PlaneState();
-//						ps.fullPath = as.AStarPath(p1, p2);
-//						ps.path = new ArrayDeque<Waypoint>();
-//						ps.path.addAll(ps.fullPath);
-//						ps.target = p2;
-//						planeStates.put(p.id, ps);
-//					}
-//				}
-//				walls.add(new Line2D.Double(p1, p2));
-//			} else {
-			
-			if (!myset2.contains(new PointTuple(p2, p1))) {
+			/*if (!myset2.contains(new PointTuple(p2, p1)))*/ {
 			
 				Deque<Waypoint> dq = as.AStarPath(p1, p2);
 				if (dq != null) {
@@ -174,6 +162,11 @@ public class Dodger extends airplane.sim.Player {
 				}
 			}
 		}
+
+    { // run one more time for tracer
+			AStar as = new AStar(walls, flowsafety);
+      flowWalls.addAll(as.getPlayerLines());
+    }
 		logger.info("hello");
 		for(Line2D l : walls) {
 			logger.info(l.getP1() + ", " + l.getP2());
@@ -209,6 +202,7 @@ public class Dodger extends airplane.sim.Player {
 		if (simulating == false) {
       unreachableFlows.clear();
       lines.clear();
+      lines.addAll(flowWalls);
 			logger.trace("round: " + round);
 		} else {
 			simulationRound++;
