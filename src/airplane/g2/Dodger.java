@@ -135,7 +135,7 @@ public class Dodger extends airplane.sim.Player {
 		
 		for (Entry<PointTuple, Integer> pt : myset2) {
       logger.info("Running a-star for flow");
-			AStar as = new AStar(walls, flowsafety);
+			AStar as = new AStar(walls, flowsafety, false);
 			Point2D p1 = pt.getKey().a;
 			Point2D p2 = pt.getKey().b;
 			/*if (!myset2.contains(new PointTuple(p2, p1)))*/ {
@@ -164,7 +164,7 @@ public class Dodger extends airplane.sim.Player {
 		}
 
     { // run one more time for tracer
-			AStar as = new AStar(walls, flowsafety);
+			AStar as = new AStar(walls, flowsafety, false);
       flowWalls.addAll(as.getPlayerLines());
     }
 		logger.info("hello");
@@ -475,7 +475,7 @@ public class Dodger extends airplane.sim.Player {
 											// to make it deterministic
           if (path == null) {
             logger.trace("calculate a-star in simulation, plane " + i);
-            AStar astar = new AStar(walls, collisionDistance);
+            AStar astar = new AStar(walls, collisionDistance, true);
             this.lines.addAll(astar.getPlayerLines());
             path = astar.AStarPath(plane.getLocation(),
                 plane.getDestination());
