@@ -153,7 +153,7 @@ public class Dodger extends airplane.sim.Player {
 					for (Plane p : planes) {
 						if(p.getLocation().equals(p1) && p.getDestination().equals(p2)) {
 							PlaneState ps = new PlaneState();
-							ps.fullPath = dq;
+							ps.fullPath = new ArrayDeque<Waypoint>(dq);
 							ps.path = new ArrayDeque<Waypoint>();
 							ps.path.addAll(ps.fullPath);
 							ps.target = p2;
@@ -233,17 +233,6 @@ public class Dodger extends airplane.sim.Player {
 				allDone = false;
 			}
 
-			if (round < plane.getDepartureTime() || bearings[i] == FINISHED) {
-				// skip
-				continue;
-			} else if (bearings[i] == WAITING && simulating && !takenOff.contains(i) && i != currentPlane) {
-        logger.trace("not taking off plane: " + i + " in simulation"
-            + " current plane: " + currentPlane);
-        // do not take-off any new planes in simulation except the
-        // currentPlane
-        continue;
-			}
-
 			if (simulating) {
 				logger.trace("get simulated state for plane: " + i);
 				state = simulatedPlaneStates.get(plane.id);
@@ -267,9 +256,21 @@ public class Dodger extends airplane.sim.Player {
 				state = new PlaneState();
 			}
 
+			if (round < plane.getDepartureTime() || bearings[i] == FINISHED) {
+				// skip
+				continue;
+			} else if (bearings[i] == WAITING && simulating && !takenOff.contains(i) && i != currentPlane && state.path == null) {
+        logger.trace("not taking off plane: " + i + " in simulation"
+            + " current plane: " + currentPlane);
+        // do not take-off any new planes in simulation except the
+        // currentPlane
+        continue;
+			}
+
+
 			path = state.path;
 
-			if (path == null) { // need to choose path for this plane
+			if (!takenOff.contains(i)) { // need to choose path for this plane
 				logger.trace("path is null for plane: " + i);
 				if (simulating == false) {
           PointTuple tuple = new PointTuple(plane.getLocation(), plane.getDestination());
@@ -297,6 +298,9 @@ public class Dodger extends airplane.sim.Player {
 									newState.path = new ArrayDeque<Waypoint>(
 											origState.path);
 								}
+                if (origState.fullPath != null) {
+                  newState.fullPath = new ArrayDeque<Waypoint>(origState.fullPath);
+                }
 								newState.target = origState.target;
 								simulatedPlaneStates.put(planes.get(k).id,
 										newState);
@@ -306,11 +310,18 @@ public class Dodger extends airplane.sim.Player {
 						result = startSimulation(planes, round);
 						logger.trace("simulation took: " + simulationRound
 								+ " rounds");
+						logger.trace("simulation end reason: "
+							+ result.getReason());
 						if (simulationRound > maxSimulationRounds) {
 							wait = true; // abort re-simulation
 							break;
 						}
 						if (result.getReason() == SimulationResult.TOO_CLOSE) {
+              if (path != null) {
+                logger.trace("flow-plane can't take off. wait.");
+                wait = true;
+                break;
+              }
 							logger.trace("collision detected!");
               collisionCounter++;
               if (collisionCounter > maxSimulationCollisions) {
@@ -443,10 +454,12 @@ public class Dodger extends airplane.sim.Player {
                 .get(currentPlane);
             PlaneState simulatedPlaneState = simulatedPlaneStates
                 .get(simulatedSelfPlane.id);
-            if (simulatedPlaneState != null) {
+            if (simulatedPlaneState != null || simulatedPlaneState.path == null) {
               path = simulatedPlaneState.fullPath;
               state.path = path;
-              state.fullPath = new ArrayDeque<Waypoint>(path);
+              if (path != null) {
+                state.fullPath = new ArrayDeque<Waypoint>(path);
+              }
             } else {
               logger.trace("path is null, destination unreachable for plane " + i);
               wait = true;
@@ -460,34 +473,38 @@ public class Dodger extends airplane.sim.Player {
 					}
 				}
 
-				if (simulating == true && i == currentPlane) { // run a-star only in simulation mode
+				if (simulating == true && i == currentPlane && path == null) { // run a-star only in simulation mode
 											// to make it deterministic
-					logger.trace("calculate a-star in simulation, plane " + i);
-					AStar astar = new AStar(walls, collisionDistance);
-					path = astar.AStarPath(plane.getLocation(),
-							plane.getDestination());
-          if (path != null) {
-            // check path length
-            if (AStar.getPathLength(path) > destDistance*maxDetourFactor) {
-              logger.trace("path length too long. wait it out. len: " + AStar.getPathLength(path));
-              path = null;
+          if (path == null) {
+            logger.trace("calculate a-star in simulation, plane " + i);
+            AStar astar = new AStar(walls, collisionDistance);
+            path = astar.AStarPath(plane.getLocation(),
+                plane.getDestination());
+            if (path != null) {
+              // check path length
+              if (AStar.getPathLength(path) > destDistance*maxDetourFactor) {
+                logger.trace("path length too long. wait it out. len: " + AStar.getPathLength(path));
+                path = null;
+              }
             }
-          }
 
-					if (path == null) {
-						logger.trace("plane: " + i + "can't take off yet"
-                + " source: " + plane.getLocation() + " dest: " + plane.getDestination());
-						logger.trace("simulated plane can't take off yet. stop simulation.");
-            wait = true;
-						// can't take-off yet. try later
-						stopSimulation();
-						// destination is unreachable at this time.
-						// some other plane is landing/taking-off?
-						continue;
-					}
-					state.path = path;
-					state.fullPath = new ArrayDeque<Waypoint>(path); // save
+            if (path == null) {
+              logger.trace("plane: " + i + "can't take off yet"
+                  + " source: " + plane.getLocation() + " dest: " + plane.getDestination());
+              logger.trace("simulated plane can't take off yet. stop simulation.");
+              wait = true;
+              // can't take-off yet. try later
+              stopSimulation();
+              // destination is unreachable at this time.
+              // some other plane is landing/taking-off?
+              continue;
+            }
+					  state.path = path;
+					  state.fullPath = new ArrayDeque<Waypoint>(path); // save
 																		// full-path
+          } else {
+            state.path = new ArrayDeque<Waypoint>(state.fullPath);
+          }
 				}
 			}
 
@@ -507,7 +524,8 @@ public class Dodger extends airplane.sim.Player {
             // check whether we need to abort simulation
             double distanceCovered = simulationRound*velocity;
             if (distanceCovered > destDistance*maxDetourFactor) {
-              logger.trace("plane seems to be orbiting. abort simulation.");
+              logger.trace("plane seems to be orbiting. abort simulation." +
+                  " sim round: " + simulationRound + " destDistance: " + destDistance);
               wait = true;
               stopSimulation();
               continue;
@@ -534,12 +552,14 @@ public class Dodger extends airplane.sim.Player {
 					if (bearings[i] != WAITING) {
 						currVec = new Vector(bearings[i]);
 					} else {
-            if (simulating == false) {
-              takenOff.add(i);
-            }
 						currVec = new Vector(calculateBearing(plane.getLocation(),
 								(Point2D.Double) firstWaypoint.point));
 					}
+
+          if (simulating == false) {
+            takenOff.add(i);
+          }
+
 					Vector goalVec = new Vector(calculateBearing(
 							plane.getLocation(),
 							(Point2D.Double) firstWaypoint.point));
