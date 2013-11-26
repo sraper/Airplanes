@@ -124,36 +124,35 @@ public class Dodger extends airplane.sim.Player {
 	}
 
 	private void setFlowPaths(ArrayList<Plane> planes) {
-		Set<Map.Entry<PointTuple, Integer>> myset2 = new HashSet<Map.Entry<PointTuple, Integer>>();
+		ArrayList<Map.Entry<PointTuple, Integer>> myset2 = new ArrayList<Map.Entry<PointTuple, Integer>>();
 		myset2.addAll(flows.entrySet());
-		double flowsafety = this.safetyDistance + .1;
+		Collections.sort(myset2, new FlowEntrySorter());
+
+		double flowsafety = this.safetyDistance;
 		
 		for (Entry<PointTuple, Integer> pt : myset2) {
 			AStar as = new AStar(walls, flowsafety, false);
 			Point2D p1 = pt.getKey().a;
 			Point2D p2 = pt.getKey().b;
-			/*if (!myset2.contains(new PointTuple(p2, p1)))*/ {
-			
-				Deque<Waypoint> dq = as.AStarPath(p1, p2);
-				if (dq != null) {
-					for (Plane p : planes) {
-						if(p.getLocation().equals(p1) && p.getDestination().equals(p2)) {
-							PlaneState ps = new PlaneState();
-							ps.fullPath = new ArrayDeque<Waypoint>(dq);
-							ps.path = new ArrayDeque<Waypoint>();
-							ps.path.addAll(ps.fullPath);
-							ps.target = p2;
-							planeStates.put(p.id, ps);
-						}
-					}
-					Point2D start = p1;
-					Point2D end;
-					for(Waypoint w : dq) {
-						end = dq.removeFirst().point;
-						walls.add(new Line2D.Double(start, end));
-						start = end;
-					}
-				}
+      Deque<Waypoint> dq = as.AStarPath(p1, p2);
+      if (dq != null) {
+        for (Plane p : planes) {
+          if(p.getLocation().equals(p1) && p.getDestination().equals(p2)) {
+            PlaneState ps = new PlaneState();
+            ps.fullPath = new ArrayDeque<Waypoint>(dq);
+            ps.path = new ArrayDeque<Waypoint>();
+            ps.path.addAll(ps.fullPath);
+            ps.target = p2;
+            planeStates.put(p.id, ps);
+          }
+        }
+        Point2D start = p1;
+        Point2D end;
+        for(Waypoint w : dq) {
+          end = dq.removeFirst().point;
+          walls.add(new Line2D.Double(start, end));
+          start = end;
+        }
 			}
 		}
 		logger.info("hello");
@@ -625,6 +624,31 @@ class PointTuple {
 		return true;
 	}
 
+}
+
+class FlowEntrySorter implements Comparator<Map.Entry<PointTuple, Integer>> {
+  public int compare (Map.Entry<PointTuple, Integer> flow1, 
+      Map.Entry<PointTuple, Integer> flow2) {
+    PointTuple p1 = flow1.getKey();
+    PointTuple p2 = flow2.getKey();
+    int numPlanes1 = flow1.getValue();
+    int numPlanes2 = flow2.getValue();
+    
+    double d1 = p1.a.distance(p1.b);
+    double d2 = p2.a.distance(p2.b);
+
+    if (numPlanes1 < numPlanes2) {
+      return 1;
+    } else if (numPlanes1 > numPlanes2) {
+      return -1;
+    } else if (d1 < d2) {
+      return -1;
+    } else if (d1 > d2) {
+      return 1;
+    } else {
+      return 0;
+    }
+  }
 }
 
 class PlaneSorter implements Comparator<Plane> {
