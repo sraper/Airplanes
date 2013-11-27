@@ -31,12 +31,13 @@ public class Dodger extends airplane.sim.Player {
 	private static final int WAITING = -1;
 
 	// knobs
-	private static final double maxBearingDeg = 9.9;
+	private static final double maxBearingDeg = 9.9999999;
 	private static final double collisionDistance = 5;
 	private static final double velocity = 1;
 	private static final int maxSimulationRounds = 200; // prevent infinite
 														// orbiting...
   private static final int maxSimulationCollisions = 25; // speed-up things a bit                          
+  private static final int minFlowPlanes = 5;
 
   private double maxDetourFactor = 2.5;
 	private double safetyDistance = 5; // TODO: try tweaking this...
@@ -81,9 +82,6 @@ public class Dodger extends airplane.sim.Player {
 					+ plane.getDestination() + " departure: "
 					+ plane.getDepartureTime());
 		}
-		// initial naive sort by path distance
-		Collections.sort(planes, new PlaneSorter());
-		//Collections.sort(planes, new IdealIntersectionSorter(planes));
 
 		flows = new HashMap<PointTuple, Integer>();
 		for (Plane p : planes) {
@@ -93,13 +91,15 @@ public class Dodger extends airplane.sim.Player {
 		Set<Map.Entry<PointTuple, Integer>> myset = new HashSet<Map.Entry<PointTuple, Integer>>();
 		myset.addAll(flows.entrySet());
 		for (Entry<PointTuple, Integer> pt : myset) {
-			if (pt.getValue() < 5) {
+			if (pt.getValue() < minFlowPlanes) {
 				flows.remove(pt.getKey());
 			}
 		}
-
 		setFlowPaths(planes);
 		
+		// initial naive sort by path distance
+		Collections.sort(planes, new PlaneSorter());
+		//Collections.sort(planes, new IdealIntersectionSorter(planes));
 		
 		
 		logger.info(flows.toString());
@@ -666,7 +666,7 @@ public class Dodger extends airplane.sim.Player {
 	private boolean planeTooClose(Plane p, ArrayList<Plane> planes, double[] bearings) {
 		for (int i = 0; i < planes.size(); i++) {
 			Plane o = planes.get(i);
-			if (p != o && bearings[i] >= 0 && p.getLocation().distance(o.getLocation()) < 5.01) return true;
+			if (p != o && bearings[i] >= 0 && p.getLocation().distance(o.getLocation()) < collisionDistance) return true;
 		}
 		return false;
 	}
@@ -746,13 +746,15 @@ class FlowEntrySorter implements Comparator<Map.Entry<PointTuple, Integer>> {
 }
 
 class PlaneSorter implements Comparator<Plane> {
+
 	@Override
 	public int compare(Plane arg0, Plane arg1) {
 		double d0 = dist(arg0.getX(), arg0.getY(),
 				arg0.getDestination().getX(), arg0.getDestination().getY());
 		double d1 = dist(arg1.getX(), arg1.getY(),
 				arg1.getDestination().getX(), arg1.getDestination().getY());
-		if (d0 < d1) {
+
+    if (d0 < d1) {
 			return 1;
 		} else if (d0 > d1) {
 			return -1;
