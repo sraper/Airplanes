@@ -341,7 +341,7 @@ public class Dodger extends airplane.sim.Player {
 				state = new PlaneState();
 			}
 
-			if (round < plane.getDepartureTime() || bearings[i] == FINISHED) {
+			if (round < plane.getDepartureTime() || bearings[i] == FINISHED || !plane.dependenciesHaveLanded(bearings)) {
 				// skip
 				continue;
 			} else if (bearings[i] == WAITING
