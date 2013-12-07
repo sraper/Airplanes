@@ -71,6 +71,14 @@ public class Dodger extends airplane.sim.Player {
 		unreachableFlows = new ArrayList<PointTuple>();
 
 		
+		for (int i = 0; i < planes.size(); i++) {
+			Plane plane = planes.get(i);
+			plane.id = i;
+			logger.info("init plane " + i + ", location: "
+					+ plane.getLocation() + " destination: "
+					+ plane.getDestination() + " departure: "
+					+ plane.getDepartureTime());
+		}
 
 		flows = new HashMap<PointTuple, Integer>();
 		for (Plane p : planes) {
@@ -85,35 +93,12 @@ public class Dodger extends airplane.sim.Player {
 			}
 		}
 		setFlowPaths(planes);
-
-//		ArrayList<Plane> sortedplanes = new ArrayList<Plane>();
-//		for(Plane p : planes) {
-//			if(p.getDependencies().size() == 0) {
-//				sortedplanes.add(p);
-//			}
-//		}
-//		while(sortedplanes.size() != planes.size()) {
-//			for (Plane p: planes) {
-//				if (!sortedplanes.contains(p)) {
-//					for(Integer d : p.getDependencies()) {
-//						
-//					}
-//				}
-//			}
-//		}
+		
 		// initial naive sort by path distance
-//		Collections.sort(planes, new PlaneSorter());
-		for (int i = 0; i < planes.size(); i++) {
-			Plane plane = planes.get(i);
-			logger.info("old id: " + plane.id);
-			plane.id = i;
-			logger.info("init plane " + i + ", location: "
-					+ plane.getLocation() + " destination: "
-					+ plane.getDestination() + " departure: "
-					+ plane.getDepartureTime());
-		}
-		// Collections.sort(planes, new IdealIntersectionSorter(planes));
-
+		Collections.sort(planes, new PlaneSorter());
+		//Collections.sort(planes, new IdealIntersectionSorter(planes));
+		
+		
 		logger.info(flows.toString());
 
 		/*
@@ -341,14 +326,14 @@ public class Dodger extends airplane.sim.Player {
 				state = new PlaneState();
 			}
 
-			if (round < plane.getDepartureTime() || bearings[i] == FINISHED || !plane.dependenciesHaveLanded(bearings)) {
+			if (round < plane.getDepartureTime() || bearings[i] == FINISHED /*|| !plane.dependenciesHaveLanded(bearings)*/) {
 				// skip
 				continue;
 			} else if (bearings[i] == WAITING
 					&& simulating
 					&& !takenOff.contains(i)
 					&& i != currentPlane
-					&& (state.path == null || (state.path != null && flowPlane))) {
+					/*&& (state.path == null || (state.path != null && flowPlane))*/) {
 				logger.trace("not taking off plane: " + i + " in simulation"
 						+ " current plane: " + currentPlane);
 				// do not take-off any new planes in simulation except the
