@@ -95,7 +95,7 @@ public class Dodger extends airplane.sim.Player {
 		setFlowPaths(planes);
 		
 		// initial naive sort by path distance
-		Collections.sort(planes, new PlaneSorter());
+		//Collections.sort(planes, new PlaneSorter());
 		//Collections.sort(planes, new IdealIntersectionSorter(planes));
 		
 		
@@ -326,7 +326,7 @@ public class Dodger extends airplane.sim.Player {
 				state = new PlaneState();
 			}
 
-			if (round < plane.getDepartureTime() || bearings[i] == FINISHED /*|| !plane.dependenciesHaveLanded(bearings)*/) {
+			if (round < plane.getDepartureTime() || bearings[i] == FINISHED || !plane.dependenciesHaveLanded(bearings)) {
 				// skip
 				continue;
 			} else if (bearings[i] == WAITING
