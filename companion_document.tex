@@ -48,9 +48,39 @@
 \newpage
 \section{Initial Insights and Observations}
 
+When we first started working on this project, our initial intuition was to solve the problem 
+at a single-agent level without doing any sort of pre-calculation or simulation; one would 
+simply need to develop some simple rules for directing the airplanes toward their goal while
+avoiding other airplanes, and the rest should fall into place. Our initial implementation, to
+this end, was a simple agent wherein each plane would be influenced by a ``force vector'' at each
+timestep, similar to a ``boid'' simulation seen in computer graphics. The basis for this force
+vector would be a vector pointing from the plane's current location to its destination. At every
+time step, one would modify this vector by adding a ``repulsive'' vector pointed away from any
+nearby planes or walls. Once the final vector was calculated, the plane would manuever toward
+this vector unwaveringly. \\\\
+Upon testing our player, it became apparent that our initial approach was insufficient for this
+problem. While scenarios with very few planes were solved easily, the scaling of the problem to
+maps with tens of airplanes would result in frequent collisions as planes attempts to avoid one
+another would inevitably result in collisions with other planes within the simulation. This 
+limitation primarily arose from the fact that each agent only considered the immediate state
+of the board at each timestep, disregarding both the implications of its potential move and
+the potential actions of all other planes in the simulation; by disregarding such information,
+it was easy to fall into cases where the ``optimal'' actions taken by any two individual planes 
+in the simulation would lead them to a course which was uncorrectable, and thus would result in
+a collision. From this, we realized that a more unified, intelligent strategy was necessary to
+succeed.
+
 %%%
 \newpage
 \section{Strategies \& Concepts}
+
+\subsection{Launch-Time Simulation}
+
+\subsection{Fire-and-Forget Flight Paths}
+
+\subsection{A* Pathfinding}
+
+\subsection{Minimum Theoretical Runtime}
 
 %%%
 \newpage
@@ -85,8 +115,7 @@ flows. While the staggering (necessary for any particular plane to avoid collisi
 a plane in another flow immediately at takeoff, before that other plane had cleared the 
 airspace) severely reduced the runtime improvements of this strategy, it was nonetheless
 better than a one-flow solution; Group 5's player demonstrated a runtime of 666 steps
-on \ms{DiagonalFlows}, while our player demonstrated a runtime of 711 steps.\\
-
+on \ms{DiagonalFlows}, while our player demonstrated a runtime of 711 steps.\\\\
 One could improve on this limitation by adding detection for multiple flow paths between
 a source-destination pair during the training phase of our player. Our current implementation
 of flow-detection works by finding a shortest path between the source-destination pair, treating
@@ -110,11 +139,9 @@ last planes to have their path decided, which would lead them to be given longer
 avoid collisions. Problems arose in that the ordering for resolving plane paths was more-or-less
 arbitrary; it was very possible that a plane with a short path in an optimal solution would be
 given a longer path, potentially to the detriment of simulation runtime, due to the fact
-that it had to consider more obstacles than other planes in determining its final path.\\
-
+that it had to consider more obstacles than other planes in determining its final path.\\\\
 We attempted to address this problem by prioritizing the order with which planes' paths 
-were determined in our pre-flight simulations. Methods tried include...\\
-
+were determined in our pre-flight simulations. Methods tried include...\\\\
 \begin{itemize}
   \item \ms{Shortest Path First:} Order the planes in ascending order by path length, and 
     resolve flight paths in that order. The intuition behind this was that shorter paths
@@ -131,7 +158,6 @@ were determined in our pre-flight simulations. Methods tried include...\\
     that order. This method attempted to resolve flights that would be interfered with 
     by many other flights first, thus prevent their runtimes from skyrocketing.
 \end{itemize}
-
 In experiments, we found that each of the above methods yielded superior results in different
 simulations, with no clear trend of certain strategies working better on certain maps. Due to the
 fact that our implementation of sorting was incompatible with our flow detection, our final solution
@@ -145,6 +171,10 @@ better results on most boards.
 %%%
 \newpage
 \section{Acknowledgments}
+
+\ms{Chris Murphy}, for the awesome class.\\\\
+\ms{Tanveer Gill}, for having helped developed the A* package used by our group with Harjot during
+the Mosquitos project.
 
 %%%
 \newpage
