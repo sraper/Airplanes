@@ -50,7 +50,7 @@
 
 %%%
 \newpage
-\section{Strategies & Concepts}
+\section{Strategies \& Concepts}
 
 %%%
 \newpage
@@ -66,7 +66,81 @@
 
 %%%
 \newpage
-\section{Future Directions & Limitations}
+\section{Future Directions \& Limitations}
+
+\subsection{Flow Optimization}
+
+One minor shortcoming of our solution as presented was its performance 
+on so-called ``flow'' boards, characterized by large numbers  of planes that shared 
+their source, destination, and departure times and so-named from the serialized 
+flow of planes that would form between the source and destination.  While we
+were able to improve our performance on these boards by adding flow detection
+to the pre-simulation training in the code (implemented by detecting the presence
+of five or more planes sharing a source an destination), our solution was limited
+by the fact that only one flow of planes was allow between any source-destination
+pair. On boards such as \ms{DiagonalFlows} with large amounts of free airspace, Group 5's
+player was able to detect the possibility of multiple flows between the source and destination
+and subsequently schedule planes to proceed to the destination in two slightly-staggered
+flows. While the staggering (necessary for any particular plane to avoid collision with
+a plane in another flow immediately at takeoff, before that other plane had cleared the 
+airspace) severely reduced the runtime improvements of this strategy, it was nonetheless
+better than a one-flow solution; Group 5's player demonstrated a runtime of 666 steps
+on \ms{DiagonalFlows}, while our player demonstrated a runtime of 711 steps.\\
+
+One could improve on this limitation by adding detection for multiple flow paths between
+a source-destination pair during the training phase of our player. Our current implementation
+of flow-detection works by finding a shortest path between the source-destination pair, treating
+other flows as obstacles obstructing this path. One possibility would be to generate some number
+of paths between the source-destination pair, determine which paths are close enough to the
+optimal path as to not increase the overall runtime of the simulation after necessary 
+staggering was taken into account, and dispatch planes to each of these flows in turn.
+Potential implementation difficulties would be being able to determine prior to simulation
+that such a splitting would not simply increase the runtime of the entire simulation.
+
+\subsection{Pathfinding Prioritization / Sorting}
+
+Another problem with our solution was the possibility of giving planes whose paths were 
+determined last in the sequence of planes overly long paths. As outlined above, our
+method of determining paths was greedy in that we would determine the path for any 
+particular plane $P_i$ by simply simulating the shortest A* path between the source
+and destination of $P_i$ in an environment with planes $P_0$...$P_{i-1}$, resetting
+the simulation and trying again with a obstacle placed at the collision point in the
+event of a collision. This methodology resulted in a greater number of collisions for the
+last planes to have their path decided, which would lead them to be given longer paths to
+avoid collisions. Problems arose in that the ordering for resolving plane paths was more-or-less
+arbitrary; it was very possible that a plane with a short path in an optimal solution would be
+given a longer path, potentially to the detriment of simulation runtime, due to the fact
+that it had to consider more obstacles than other planes in determining its final path.\\
+
+We attempted to address this problem by prioritizing the order with which planes' paths 
+were determined in our pre-flight simulations. Methods tried include...\\
+
+\begin{itemize}
+  \item \ms{Shortest Path First:} Order the planes in ascending order by path length, and 
+    resolve flight paths in that order. The intuition behind this was that shorter paths
+    would have fewer intersections with other paths, and thus their resolution would generate
+    fewer obstacles for later-resolved flights.
+  \item \ms{Longest Path First:} Order the planes in descending order by path length, and
+    resolve flight paths in that order. The intuition behind this was that longer flights
+    are more likely to be the limiting factor in the overall runtime of the simulation, 
+    so resolving them first would ensure their runtime would not be increased by collisions
+    with shorter flights.
+  \item \ms{Least Intersections First:} Determine the straight line paths between all
+    source-destination pairs in the simulation. Order the planes in descending order by
+    number of intersections with other straight line paths, and resolve flight paths in 
+    that order. This method attempted to resolve flights that would be interfered with 
+    by many other flights first, thus prevent their runtimes from skyrocketing.
+\end{itemize}
+
+In experiments, we found that each of the above methods yielded superior results in different
+simulations, with no clear trend of certain strategies working better on certain maps. Due to the
+fact that our implementation of sorting was incompatible with our flow detection, our final solution
+ultimately scrapped prioritization of plane flights. One issue that would have to be solved if this
+were implemented in the future would be gathering useful information for prioritizing flights from
+the information that is available at the beginning of the simulation. One only knows when the simulation
+starts what the source, destination, and departure time of each plane is. As of time of writing, we 
+were unable to find any way of extrapolating from this data a prioritization that would reliably yield
+better results on most boards.
 
 %%%
 \newpage
