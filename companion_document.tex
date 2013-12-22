@@ -58,6 +58,12 @@ vector would be a vector pointing from the plane's current location to its desti
 time step, one would modify this vector by adding a ``repulsive'' vector pointed away from any
 nearby planes or walls. Once the final vector was calculated, the plane would manuever toward
 this vector unwaveringly. \\\\
+Additionally, we made the insight (along with several other groups) that the total runtime for
+any particular map was bounded by the maximum across all planes $P$ of $distance(P_{source}, 
+P_{destination}) + P_{departure time}$. In light of this, our initial vector implementation 
+contained a prioritization mechanism wherein planes which would land later in an ideal solution
+were granted precedence when deciding which plane manuevered out of the way during collision 
+scenarios.\\\\
 Upon testing our player, it became apparent that our initial approach was insufficient for this
 problem. While scenarios with very few planes were solved easily, the scaling of the problem to
 maps with tens of airplanes would result in frequent collisions as planes attempts to avoid one
@@ -74,13 +80,28 @@ succeed.
 \newpage
 \section{Strategies \& Concepts}
 
-\subsection{Launch-Time Simulation}
+In a radical shift from our initial strategy, we ultimately decided on a strategy that involved
+the pre-calculation of flight paths prior to launch. The various aspects of this strategy are 
+outlined below.
 
-\subsection{Fire-and-Forget Flight Paths}
+\subsection{Launch-Time Simulation and Pathfinding}
 
-\subsection{A* Pathfinding}
+Instead of attempting to calculate the flight path of a plane dynamically in the air, our final
+solution instead set the flight path of a plane once and let it run its course. Once a plane $P_i$'s 
+(the i'th plane to depart in the current session)  departure time has been reached in the session, 
+the player will begin simulating this plane's path to the destination as follows...
+\begin{itemize}
+  \item Simulate an A* path between $P_i$'s source and destination, considering the presence of 
+    $P_0$...$P_{i-1}$'s pre-calculated paths with a set of obstacles. On the first iteration, 
+    this will be a straight-line path between $P_i$'s source and destination, as no obstacles
+    will have been recorded.
+  \item If $P_i$ reaches its destination successfully, then set that as the path for $P_i$ in this
+    session and launch it. $P_i$ will follow this path until the end of the session.
+  \item If $P_i$ experiences a collision during the simulation, then restart the simulation. On this new
+    simulation, add an obstacle for the A* path where the collision took place.
+\end{itemize}
 
-\subsection{Minimum Theoretical Runtime}
+\subsection{Flow Detection}
 
 %%%
 \newpage
@@ -141,7 +162,7 @@ arbitrary; it was very possible that a plane with a short path in an optimal sol
 given a longer path, potentially to the detriment of simulation runtime, due to the fact
 that it had to consider more obstacles than other planes in determining its final path.\\\\
 We attempted to address this problem by prioritizing the order with which planes' paths 
-were determined in our pre-flight simulations. Methods tried include...\\\\
+were determined in our pre-flight simulations. Methods tried include...
 \begin{itemize}
   \item \ms{Shortest Path First:} Order the planes in ascending order by path length, and 
     resolve flight paths in that order. The intuition behind this was that shorter paths
