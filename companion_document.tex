@@ -142,14 +142,17 @@ planes and perform the appropriate update action based on its current status wit
 Pathfinding in our implementation is based off of the A* algorithm, using straight-line distance as a
 heuristic. Because this heuristic is admissible (i.e. it never over-estimates the actual distance needed
 to reach the goal), one knows that for any particular board configuration it will generate the optimal
-path between the source and destination. The procedure for determining a path is as follows.
-\begin{itemize}
-  \item TODO: Make this detailed.
-  \item Set some waypoints
-  \item Find the shortest path among visible waypoints.
-  \item Simulate that path. If it finishes, great! If it doesn't, add an unpathable obstacle around the 
-    collision point, and add waypoints around this obstacle. Repeat.
-\end{itemize}
+path between the source and destination. The procedure for determining the path of a particular plane is as follows...
+TODO: ADD MORE DETAIL ABOUT ARRANGEMENT OF WAYPOINTS BELOW
+\begin{enumerate}
+  \item Start by setting waypoints between the source and destination of a particular plane.
+  \item Use A* to find the shortest path between source and destination among the visible waypoints.
+  \item Simulate the shortest path among waypoints. If the plane succeeds in reaching its destination,
+    then return a list of waypoints representing this path. If the plane fails, then generate an obstacle
+    at the collision site (represented as a series of walls around the collision site through which the
+    plane is not permitted to path), generate a set of waypoints around this obstacle and add it to the
+    overall set of waypoints, and repeat steps 2 and 3 with the updated set of waypoints.
+\end{enumerate}
 In the initial implementation, a collision obstacle resulting from a collision in a prior simulation would
 be present in each time step of subsequent simulations, thus causing all pathing decisions to attempt to
 move around it. In subsequent implementation, we implemented that the obstacle would only appear in timesteps
@@ -159,8 +162,8 @@ plane at that particular point in time.\\\\
 \subsection{Referenced Constants}
 \begin{itemize}
   \item \ms{TURN\_RADIUS}: The number of degrees the plane may turn during a timestep. The theoretical limit of 
-    10.0 by the simulator was found to cause issues due to floating point imperfections, so a value of 
-    9.5 was ultimately used.
+    10.0 by the simulator was found to cause issues due to floating point imperfections where the simulator would
+    crash due to a bearing change of more than 10 degrees, so a value of 9.5 was ultimately used.
 \end{itemize}
 
 
@@ -171,6 +174,8 @@ plane at that particular point in time.\\\\
 %%%
 \newpage
 \section{Contributions}
+
+\subsection{Alternative Success Metrics}
 
 %%%
 \newpage
@@ -257,5 +262,15 @@ the Mosquitos project.
 %%%
 \newpage
 \section{Conclusion}
+
+Overall, this was an extremely interesting and fun project.
+
+One potential improvement in the future would be to introduce a better metric (or metrics) for success
+in this project. As indicated in class, our group felt that the metric of total runtime for the simulation
+was flawed, as it made the task too dependent on the performance of the last-arriving plane in the simulation;
+as long as they didn't directly interfere with the last arriving plane or delay themselves so much
+as to become the last arriving plane themselves, it became less important to optimize the behavior
+of other planes. Our group feels a better success metric would be to minimize the sum of total delay and 
+total power used over the course of a simulation.
   
 \end{document}
