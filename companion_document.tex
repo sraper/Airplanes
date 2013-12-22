@@ -44,6 +44,12 @@
 \newpage
 \section{Introduction}
 
+The goal of this project was to create a strategy to efficiently schedule and control aircraft. While avoiding collisions was obviously the most important goal of the project, delivering all planes to their destination in as few steps as possible proved to be a suitable metric in measuring effectiveness. Our player was given the departure times and destinations of all planes but little other information. Using only these two pieces of information, we strove to quickly deliver all planes. While in the air, planes were not permitted to be within five units of each other.
+
+Throughout the project two important additional challenges were provided. The first was a specific kind of board, which we will refer to as a ``flow board''. On these boards singular planes were not simply flying to various destinations. Instead, there were large numbers of planes departing and going to the same place. It quickly became apparent that a conventional strategy was not sufficient in satisfying these boards.
+
+The second challenge presented was dependencies. In this case, some flights were dependent on the succesful arrival of one or more other planes. This too proved to require additional changes to our initial implementation.
+
 %%%
 \newpage
 \section{Initial Insights and Observations}
@@ -105,6 +111,12 @@ the existence of a ``flow'' on the board (a sequence of five or more planes whic
 their source, destination, and departure time), then the simulator would, instead of generating a path
 as outline above, generate a serialized path where planes would be dispatched in a single-file line
 from the flow source to the flow destination.
+
+It became quickly apparent that in the special case of flows a separate approach need be taken. We define a flow as 5 planes departing from the same airport at the same time and going to the same place. While identifying these flows was fairly simple, defining their behavior proved to be more interesting. As flows were in play on the board for much longer than a single airplane, picking a path that was both quick and unobtrusive was extremely important. The problem here lay in the fact that a single flow could obstruct a large amount of other planes so it could not simply be given a higher prioirity. However, flows were often the last planes to land so giving them ample time to land was equally important.
+
+Our strategy for dealing with these flows once we identified them was essentially to treat them like walls as their steady stream of airplanes would effectively block all other activity in their area. To do so we simply added to the set of walls used by our A* object. These walls were then used for calculating paths for lone planes as well as additional flows. Unlike the lone plane paths, the flow paths were not time sensitive and would thus be considered at every step of simulation.
+
+We found that one of the most important considerations when scheduling our flows was the number of planes in the flow. As our primary metric for evaluating our strategy was total number of steps, we found that prioritizing the flows with a large number of planes was important. In the cases of ties we simply gave precedence to the flow with shorter distance. This may seem counterintuitive longer flows will obviously take a longer time to land. However, in testing, we found that the shorter flows were much less problematic than the longer ones. As long flows often have to go across a large part of the board, they would effectively put a wall across a very important part of the board that disrupted many of the other planes, including some of the shorter flows. These flows would have to grow their paths unnecessarily large to avoid the larger flow. In practice, this was not worth it.
 
 %%%
 \newpage
