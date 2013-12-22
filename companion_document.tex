@@ -47,7 +47,6 @@
 %%%
 \newpage
 \section{Initial Insights and Observations}
-
 When we first started working on this project, our initial intuition was to solve the problem 
 at a single-agent level without doing any sort of pre-calculation or simulation; one would 
 simply need to develop some simple rules for directing the airplanes toward their goal while
@@ -79,33 +78,79 @@ succeed.
 %%%
 \newpage
 \section{Strategies \& Concepts}
-
 In a radical shift from our initial strategy, we ultimately decided on a strategy that involved
 the pre-calculation of flight paths prior to launch. The various aspects of this strategy are 
 outlined below.
 
 \subsection{Launch-Time Simulation and Pathfinding}
-
 Instead of attempting to calculate the flight path of a plane dynamically in the air, our final
 solution instead set the flight path of a plane once and let it run its course. Once a plane $P_i$'s 
 (the i'th plane to depart in the current session)  departure time has been reached in the session, 
 the player will begin simulating this plane's path to the destination as follows...
 \begin{itemize}
-  \item Simulate an A* path between $P_i$'s source and destination, considering the presence of 
+  \item Simulate a path between $P_i$'s source and destination, considering the presence of 
     $P_0$...$P_{i-1}$'s pre-calculated paths with a set of obstacles. On the first iteration, 
     this will be a straight-line path between $P_i$'s source and destination, as no obstacles
     will have been recorded.
   \item If $P_i$ reaches its destination successfully, then set that as the path for $P_i$ in this
     session and launch it. $P_i$ will follow this path until the end of the session.
   \item If $P_i$ experiences a collision during the simulation, then restart the simulation. On this new
-    simulation, add an obstacle for the A* path where the collision took place.
+    simulation, add an obstacle for the pathfinding where the collision took place.
 \end{itemize}
 
 \subsection{Flow Detection}
+In response to the trend of ``flow'' boards that arose during this project, our team added a special
+``flow detection'' routine during the training phase of the player. If, during training, the player noted
+the existence of a ``flow'' on the board (a sequence of five or more planes which approximately shared 
+their source, destination, and departure time), then the simulator would, instead of generating a path
+as outline above, generate a serialized path where planes would be dispatched in a single-file line
+from the flow source to the flow destination.
 
 %%%
 \newpage
 \section{Implementation}
+
+\subsection{Flight Plan Determination}
+At each call of the \ms{updatePlanes()} method, our solution will iterate through the collection of 
+planes and perform the appropriate update action based on its current status within the session.
+\begin{itemize}
+  \item For each plane that has not taken off, we calculate a flight plan using the pathfinding
+    implementation described below, which ultimately returns a \ms{List<Waypoint>} representing the waypoints that must
+    be traversed by the plane on the way to its destination. The plane is then dispatched heading toward
+    its first waypoint.
+  \item For each plane that has taken off, check its current bearing and location relative to its
+    current waypoint. If it is within a certain radius of its current sought \ms{Waypoint}, pop that \ms{Waypoint} off
+    the front of the list and take the next \ms{Waypoint} in the list to be the current \ms{Waypoint}. If the
+    plane's bearing is directed toward its current \ms{Waypoint}, then maintain course; else, turn the plane either
+    \ms{TURN\_RADIUS} or $Angle(Current Bearing, Goal Bearing)$ degrees (whichever is smaller) toward the current
+    waypoint. 
+\end{itemize}
+    
+\subsection{Pathfinding Implementation}
+Pathfinding in our implementation is based off of the A* algorithm, using straight-line distance as a
+heuristic. Because this heuristic is admissible (i.e. it never over-estimates the actual distance needed
+to reach the goal), one knows that for any particular board configuration it will generate the optimal
+path between the source and destination. The procedure for determining a path is as follows.
+\begin{itemize}
+  \item TODO: Make this detailed.
+  \item Set some waypoints
+  \item Find the shortest path among visible waypoints.
+  \item Simulate that path. If it finishes, great! If it doesn't, add an unpathable obstacle around the 
+    collision point, and add waypoints around this obstacle. Repeat.
+\end{itemize}
+In the initial implementation, a collision obstacle resulting from a collision in a prior simulation would
+be present in each time step of subsequent simulations, thus causing all pathing decisions to attempt to
+move around it. In subsequent implementation, we implemented that the obstacle would only appear in timesteps
+around that in which the collision generating the obstacle occurred, to simulate the presence of the collided
+plane at that particular point in time.\\\\
+
+\subsection{Referenced Constants}
+\begin{itemize}
+  \item \ms{TURN\_RADIUS}: The number of degrees the plane may turn during a timestep. The theoretical limit of 
+    10.0 by the simulator was found to cause issues due to floating point imperfections, so a value of 
+    9.5 was ultimately used.
+\end{itemize}
+
 
 %%%
 \newpage
