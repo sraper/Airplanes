@@ -3,6 +3,9 @@
 \hoffset=-90pt
 \textwidth= 500pt
 \textheight= 625pt
+\usepackage[lined,boxed,commentsnumbered]{algorithm2e}
+\usepackage{framed}
+\usepackage{graphicx}
 
 \newcommand{\myname}{Harjot Gill, Tiernan Garsys, Sam Raper}
 
@@ -53,21 +56,24 @@ The second challenge presented was dependencies. In this case, some flights were
 %%%
 \newpage
 \section{Initial Insights and Observations}
-When we first started working on this project, our initial intuition was to solve the problem 
-at a single-agent level without doing any sort of pre-calculation or simulation; one would 
-simply need to develop some simple rules for directing the airplanes toward their goal while
-avoiding other airplanes, and the rest should fall into place. Our initial implementation, to
-this end, was a simple agent wherein each plane would be influenced by a ``force vector'' at each
-timestep, similar to a ``boid'' simulation seen in computer graphics. The basis for this force
-vector would be a vector pointing from the plane's current location to its destination. At every
-time step, one would modify this vector by adding a ``repulsive'' vector pointed away from any
-nearby planes or walls. Once the final vector was calculated, the plane would manuever toward
-this vector unwaveringly. \\\\
+When we first started working on this project, our initial intuition was to
+solve the problem at a single-agent level without doing any sort of
+pre-calculation or simulation; one would simply need to develop some simple
+rules for directing the airplanes toward their goal while avoiding other
+airplanes, and the rest should fall into place. Our initial implementation, to
+this end, was a simple agent wherein each plane would be influenced by a ``force
+vector'' at each timestep, similar to a ``boid'' simulation seen in computer
+graphics. The basis for this force vector would be a vector pointing from the
+plane's current location to its destination. At every time step, one would
+modify this vector by adding a ``repulsive'' vector pointed away from any nearby
+planes or walls. Once the final vector was calculated, the plane would maneuver
+toward this vector unwaveringly. \\\\
+
 Additionally, we made the insight (along with several other groups) that the total runtime for
 any particular map was bounded by the maximum across all planes $P$ of $distance(P_{source}, 
 P_{destination}) + P_{departure time}$. In light of this, our initial vector implementation 
 contained a prioritization mechanism wherein planes which would land later in an ideal solution
-were granted precedence when deciding which plane manuevered out of the way during collision 
+were granted precedence when deciding which plane maneuvered out of the way during collision 
 scenarios.\\\\
 Upon testing our player, it became apparent that our initial approach was insufficient for this
 problem. While scenarios with very few planes were solved easily, the scaling of the problem to
@@ -112,7 +118,7 @@ their source, destination, and departure time), then the simulator would, instea
 as outline above, generate a serialized path where planes would be dispatched in a single-file line
 from the flow source to the flow destination.
 
-It became quickly apparent that in the special case of flows a separate approach need be taken. We define a flow as 5 planes departing from the same airport at the same time and going to the same place. While identifying these flows was fairly simple, defining their behavior proved to be more interesting. As flows were in play on the board for much longer than a single airplane, picking a path that was both quick and unobtrusive was extremely important. The problem here lay in the fact that a single flow could obstruct a large amount of other planes so it could not simply be given a higher prioirity. However, flows were often the last planes to land so giving them ample time to land was equally important.
+It became quickly apparent that in the special case of flows a separate approach need be taken. We define a flow as 5 planes departing from the same airport at the same time and going to the same place. While identifying these flows was fairly simple, defining their behavior proved to be more interesting. As flows were in play on the board for much longer than a single airplane, picking a path that was both quick and unobtrusive was extremely important. The problem here lay in the fact that a single flow could obstruct a large amount of other planes so it could not simply be given a higher priority. However, flows were often the last planes to land so giving them ample time to land was equally important.
 
 Our strategy for dealing with these flows once we identified them was essentially to treat them like walls as their steady stream of airplanes would effectively block all other activity in their area. To do so we simply added to the set of walls used by our A* object. These walls were then used for calculating paths for lone planes as well as additional flows. Unlike the lone plane paths, the flow paths were not time sensitive and would thus be considered at every step of simulation.
 
@@ -137,27 +143,109 @@ planes and perform the appropriate update action based on its current status wit
     \ms{TURN\_RADIUS} or $Angle(Current Bearing, Goal Bearing)$ degrees (whichever is smaller) toward the current
     waypoint. 
 \end{itemize}
-    
+
+\begin{algorithm}
+  \SetAlgoLined
+  \DontPrintSemicolon
+  \SetKwProg{Fn}{Function}{ is}{end}
+  \Fn{A*(start,goal)}{
+    $closedset\leftarrow EmptySet()$ \tcp*[h]{The set of nodes already
+    evaluated.}\;
+    $openset\leftarrow \{start\}$ \tcp*[h]{The set of tentative nodes to be
+    evaluated, initially containing the start node}\;
+    $came\_from\leftarrow EmptyMap()$ \tcp*[h]{The map of navigated nodes.}\; 
+
+    $g\_score[start]\leftarrow 0$ \tcp*[h]{Cost from start along best known
+    path.}\;
+    \tcp*[h]{Estimated total cost from start to goal through y.}\;
+          $f\_score[start]\leftarrow g\_score[start] +
+          heuristic\_cost\_estimate(start, goal)$\;
+           
+          \While{$openset.empty()$ $!=$ $true$}{
+            $current\leftarrow openset.leastFScoreNode()$\;
+              \If{$current$ $==$ $goal$}{
+                \emph{return reconstruct\_path(came\_from, goal)}\;
+                }
+              
+              $openset.delete(current)$\;  
+              $closedset.add(current)$\;
+              \ForEach{element $neighbor$ in neighbor\_nodes(current)}{
+                  $tentative\_g\_score\leftarrow g\_score[current] +
+                  dist\_between(current,neighbor)$\;
+                  $tentative\_f\_score\leftarrow tentative\_g\_score +
+                  heuristic\_cost\_estimate(neighbor, goal)$\;
+                  \If{$closedset.contains(neighbor)$ $==$ $true$ $\&\&$ $tentative\_f\_score$
+                  $>=$ $f\_score[neighbor]$}{
+                    \emph{continue}\;
+                        }
+
+                        \If{$openset.contains(neighbor)$ $==$ $false$ $||$
+                        $tentative\_f\_score$ $<$ $f\_score[neighbor]$}{ 
+                      $came\_from[neighbor]\leftarrow current$\;
+                      $g\_score[neighbor]\leftarrow tentative\_g\_score$\;
+                      $f\_score[neighbor]\leftarrow tentative\_f\_score$\;
+                      \If{$openset.contains(neighbor)$ $!=$ $true$}{
+                        $openset.add(neighbor)$\;
+                       }
+                }
+              }
+           }
+           \emph{return failure}
+        }
+  \caption{A* Search Algorithm\label{algo:astar}}
+\end{algorithm}
+
+\begin{figure}[h!]
+  \includegraphics[width=150mm]{wp.png}
+  \caption{Ad-hoc Obstacles and Waypoint Placement}
+\label{fig:wp}
+\end{figure}
+
+\begin{figure}[h!]
+  \includegraphics[width=150mm]{diagonal_flows.png}
+  \caption{Flow Obstacles and Waypoint Placement}
+\label{fig:diagonal_flows}
+\end{figure}
+
 \subsection{Pathfinding Implementation}
-Pathfinding in our implementation is based off of the A* algorithm, using straight-line distance as a
-heuristic. Because this heuristic is admissible (i.e. it never over-estimates the actual distance needed
-to reach the goal), one knows that for any particular board configuration it will generate the optimal
-path between the source and destination. The procedure for determining the path of a particular plane is as follows...
-TODO: ADD MORE DETAIL ABOUT ARRANGEMENT OF WAYPOINTS BELOW
-\begin{enumerate}
-  \item Start by setting waypoints between the source and destination of a particular plane.
-  \item Use A* to find the shortest path between source and destination among the visible waypoints.
-  \item Simulate the shortest path among waypoints. If the plane succeeds in reaching its destination,
-    then return a list of waypoints representing this path. If the plane fails, then generate an obstacle
-    at the collision site (represented as a series of walls around the collision site through which the
-    plane is not permitted to path), generate a set of waypoints around this obstacle and add it to the
-    overall set of waypoints, and repeat steps 2 and 3 with the updated set of waypoints.
-\end{enumerate}
-In the initial implementation, a collision obstacle resulting from a collision in a prior simulation would
-be present in each time step of subsequent simulations, thus causing all pathing decisions to attempt to
-move around it. In subsequent implementation, we implemented that the obstacle would only appear in timesteps
-around that in which the collision generating the obstacle occurred, to simulate the presence of the collided
-plane at that particular point in time.\\\\
+Pathfinding in our implementation is based off of the A* algorithm, using
+straight-line distance as a heuristic. Because this heuristic is admissible
+(i.e. it never over-estimates the actual distance needed to reach the goal), one
+knows that for any particular board configuration it will generate the optimal
+path between the source and destination. The procedure for determining a path is
+explained in Algorithm~\ref{algo:astar}. Our A-Star algorithm implementation
+takes as input a set of waypoint locations on the board to traverse to get from
+a source to destination.  The waypoints have to be placed so that A* is able to
+find path between any two given points on the board despite the obstacles and
+the path distance has to be reasonably close to the shortest possible distance
+between these points.  Both these criterion are satisfied when the waypoints are
+near the edges of the obstacles. 
+
+In the initial implementation, a collision obstacle resulting from a collision
+in a prior simulation would be present in each time step of subsequent
+simulations, thus causing all pathing decisions to attempt to move around it. In
+subsequent implementation, we implemented that the obstacle would only appear in
+timesteps around that in which the collision generating the obstacle occurred,
+to simulate the presence of the collided plane at that particular point in
+time.\\\\
+
+Figure~\ref{fig:wp} shows a typical obstacle and waypoint placement
+configuration from one of the simulation runs. As mentioned earlier, an obstacle
+(two perpendicular rectangles resembling a cross) is placed at the collision
+point and one of the colliding planes is forced to go around this virtual
+obstacle using the four waypoints around this obstacle, so as to avoid "real"
+collision. Waypoints were also added in a radial pattern around the airports, so
+as to allow planes to take-off in opposite direction than the destination, if
+they can. Figure~\ref{fig:diagonal_flows} shows obstacle and waypoint placement
+for group of planes forming "flows". Unlike ad-hoc, real-time approach for
+pathfinding before taking-off new planes, the flow planes fly along pre-computed
+paths. This closely resembles circuit establishment approach in communication
+networks, in which traffic flows along a pre-determined circuit/path. This
+approach helps increase traffic throughput especially in scenarios in which
+multiple flows intersect each other. As mentioned earlier, the flows are
+detected before running the actual simulation and paths/circuits are
+pre-computed too. The non-flow planes attempt to fly around the flow-planes
+using the normal ad-hoc approach at runtime.
 
 \subsection{Referenced Constants}
 \begin{itemize}
