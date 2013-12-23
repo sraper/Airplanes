@@ -257,6 +257,7 @@ pathfinding before taking-off new planes, the flow planes fly along pre-computed
 paths. This closely resembles circuit establishment approach in communication
 networks, in which traffic flows along a pre-determined circuit/path. This
 approach helps increase traffic throughput especially in scenarios in which
+
 multiple flows intersect each other. As mentioned earlier, the flows are
 detected before running the actual simulation and paths/circuits are
 pre-computed too. The non-flow planes attempt to fly around the flow-planes
@@ -279,8 +280,6 @@ using the normal ad-hoc approach at runtime.
 %%%
 \newpage
 \section{Contributions}
-
-\subsection{Alternative Success Metrics}
 
 \subsection{Elegant time-aware approach path-finding}
 
@@ -384,14 +383,28 @@ the Mosquitos project.
 \newpage
 \section{Conclusion}
 
-Overall, this was an extremely interesting and fun project.
+Overall, this was an extremely interesting and fun project. The opinions of each of the groupmates on
+various aspects of the project are below...
 
-One potential improvement in the future would be to introduce a better metric (or metrics) for success
+\begin{itemize}
+\item \ms{T,S,H:}One potential improvement in the future would be to introduce a better metric (or metrics) for success
 in this project. As indicated in class, our group felt that the metric of total runtime for the simulation
 was flawed, as it made the task too dependent on the performance of the last-arriving plane in the simulation;
 as long as they didn't directly interfere with the last arriving plane or delay themselves so much
 as to become the last arriving plane themselves, it became less important to optimize the behavior
 of other planes. Our group feels a better success metric would be to minimize the sum of total delay and 
-total power used over the course of a simulation.
+total power used over the course of a simulation. By measuring success in this way, the performance of a player
+would not be strictly tied to the performance of any single plane, but rather be an aggregate of the performance
+of all planes in the session. 
+
+\item \ms{T,S:} Another suggestion for future semesters would be to place the assignment of this project earlier in the 
+semester. Having discussed it, we feel that the Airplane problem was a less complicated piece to tackle than Mosquitos, 
+due to the simpler goal conditions and fewer factors (no walls, no random agents, etc.) to consider in solving the problem.
+By positioning Airplanes earlier, we feel the difficulty of the class would better scale with the time spent in the class. 
+In addition, this arrangement would allow more room for extension of the Mosquitos assignment, which could be valuable as 
+evidenced by the fact that the Mosquitos problem remained unsolved in an ``ideal'' fashion when we finished with it.
+
+
+\end{itemize}
   
 \end{document}
