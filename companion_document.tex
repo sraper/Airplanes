@@ -277,6 +277,93 @@ using the normal ad-hoc approach at runtime.
 \newpage
 \section{Results}
 
+Our player did reasonably well in a variety of environments and configurations. As the boards were each quite unique, it may be best to examine them individually. It should be noted that there was an element of nondeterminism in our player when using the A* algorithm. In our implementation, when there was a tie between the length of two paths, the chosen one was selected randomly. While this may seem to be of small consequence, we found that the effects were often quite dramatic. On boards where a lot of these decisions were being made, we could see large swings on various runs. To this end our tournament results should be taken with a grain of salt, although they still contain worthwhile indicators of our performance overall.
+
+\subsection{chaos}
+
+This was by far our worst performance. We can attribute our poor performance on this map to our omission of scheduling flows with dependencies. This map combined three of the most difficult aspects of the project in a way that we did not anticipate. The most step-consuming part of this map was the dependent flows. As we see it, dependencies were more or less a problem of scheduling. To handle heavily dependency-laden maps, we should have implemented a scheduling algorithm that would take into account the depth of a dependency string. To do so, we could’ve created a sort of directed graph in which planes represented nodes and edges represented dependencies. We could then weight the nodes and determine the latest theoretical arrival based on the graph. With this information we would be able to prioritize the most problematic paths and improve our runtime greatly.
+
+With our current implementation, the effect of dependencies was not taken into consideration for the flows at all. On this board two flows were dependent on each other. In Figure R1, you can see the state of the board at step 325. All planes have landed except for a flow going on the same path as the cyan plane and a flow going in the opposite direction. Unfortunately, the flow in the same direction as the cyan plane is dependent on that going the opposite direction so all planes must wait for the cyan plane to land. With the above improvements to our scheduling algorithm, it would have been easily possible to foresee this situation and schedule the cyan plane and all planes on which it depended earlier. 
+
+\includegraphics[width=125mm]{pics/R1.png}
+\caption{Figure R1: Dodger on chaos.txt board at step 325}
+
+\subsection{DiagonalFlows}
+
+Our performance on Diagonal Flows was quite good. At 711 steps we were less than 50 from the best, 666. The white boxes, shown below in figure R2 demonstrate how the flows were set up. As the flows had the same number of planes and were of exactly equal length, the top-left to bottom-right flow was given priority arbitrarily. It was thus given a straight path and the other flow was forced to work around it. Two waypoints were placed at either end of the straight flow. A* was then used to find a path for the remaining flow using the waypoints set by the straight path. The reason that the flows are wider than absolutely necessary is to account for the turn radius of the planes. If you’ll notice, where the planes are forced to turn around the edge of the flow, the planes deviate from the calculated A* path. In this case, the path could have been tightened up as the bottom flow is giving a slightly wider berth around the bottom-right airport than necessary. This idea of “flow safety” was something that we tried tweaking but ultimately decided to set at a fairly conservative value. While it is appealing to reduce its value on known boards, with the introduction of unknown boards it is paramount to take a safer route.
+
+\includegraphics[width=125mm]{pics/R2.png}
+\caption{Figure R2: Dodger on DiagonalFlows.txt board}
+
+Another change that could have improved our performance on this and other flow boards is the inclusion of non-uniform paths for flows. In this case such a strategy could have helped in two ways. First, the straight path could have had several arcs rather than a single file line. Doing so would have increased the rate at which the airplanes were departing and arriving, increasing the throughput of the flow. Additionally, the longer path could have been split into a path going as illustrated above and a separate path going around the top of the straight flow. With the airplanes leaving at different angles throughput would again be drastically increased.
+
+Although these improvements could have been made, they would only really be effective on boards similarly simple and unobstructed. Both require the flows to take up more than minimal space, which is a dangerous decision to make. We believe our solution, shown above, was safer in most cases and inoptimal only in the special case shown above.
+
+\subsection{stream}
+
+Our performance on this board was on par with the best score. We completed the board in 165 steps, the best being 153. The part of our strategy that played most into our success on this board was our policy of getting all planes off the ground as soon as possible. In Figure R3 below, you can see that the planes at the top, heading towards the southern-most airports, take off despite the many conflicts that they create, especially with the top and bottom set of flows.
+
+\includegraphics[width=125mm]{pics/R3.png}
+\caption{Figure R3: Dodger on stream.txt at step 20}
+
+The flights prove to interrupt the flows but, as they are the most step-intensive flights, it serves to put them in the air as soon as possible. The flows, while they contain a large amount of airplanes, have a relatively short distance to travel and are thus able to recover from the interruptions easily.
+
+The next important thing to notice about our solution to this map is the paths chosen for the flows. Here comes into play our decision to prioritize the shorter distances. The horizontal flows are thus chosen and the vertical flows, which have to traverse the whole board, are forced to adapt. While this creates a relatively long path for the vertical flows, it actually saves time and path length in the long run. Prioritizing the long paths would have created problems for all four of the horizontal flows. The paths for the flows can be seen in Figure R4:
+
+\includegraphics[width=125mm]{pics/R4.png}
+\caption{Figure R4: Paths for flows on stream.txt board}
+
+We can see the progression of the simulation in Figure R5 below. While a relatively convoluted picture, there are important takeaways. The right and bottom horizontal flows have finished launching their planes and are no longer a problem. We still have planes to launch in the top and right flows as the planes departing individually from the top have disrupted them. Additionally, we can see our take-off-immediately policy in action by the paths taken from the top middle airport. The planes took off at various angles to increase throughput and the player took care of them as they came. 
+
+\includegraphics[width=125mm]{pics/R5.png}
+\caption{Figure R5: Dodger on stream.txt at step 69}
+
+Finally in Figure R6 below we can see the end of the simulation. As the individual flights reach their destination at the bottom of the board, the rest of the planes in the left and top horizontal flows are able to take off and land. Even though these flows were interrupted by the vertical individual planes, they were not the last to land. We still had to wait for the non-flow planes despite giving them precedence. This board proved how important getting planes in the air early was to our strategy.
+
+\includegraphics[width=125mm]{pics/R6.png}
+\caption{Figure R6: Dodger on stream.txt at step 105}
+
+\subsection{tangle}
+
+Tangle was a dependency board on which our lack of even a simple scheduling algorithm proved to be our downfall. We completed the board in 316 steps while the best in the class was able to do so in 266. Our lack of scheduling and its ramifications can be seen several times throughout the simulation. For the most part, pathfinding on this map was a nonissue as there were not enough flights in the air at any one point to cause many collisions. We can see the first instance of our lack of scheduling in Figure R7.
+
+\includegraphics[width=125mm]{pics/R7.png}
+\caption{Figure R7: Dodger on tangle.txt at step 118}
+
+All four planes originating from the middle airport were dependent on a single flight and were thus given equal opportunity to leave once it landed. However, the flight heading to the right of the board has much more importance than the others. A long chain of flights, which bounds the optimal time for this board, are all dependent on this flight. For this reason, that plane should have been given precedence and taken off first. However, due to the unsorted nature of our implementation, it was forced to wait for the other three to depart.
+
+\includegraphics[width=125mm]{pics/R8.png}
+\caption{Figure R8: Dodger on tangle.txt at step 296}
+
+This problem persists in Figure R8 above. This cyan plane, although the last plane to land, was forced to dodge a plane that had taken off earlier. Because our planes followed fixed paths once they had taken off, the cyan plane was the only one making decisions. While the sorting solution would have solved this problem, we could also have avoided it by making both planes in a collision eligible for course correction. By running two simulations, one for each plane in the collision and then comparing the land time of both planes in both simulations, we could choose which correction would be most advantageous. This, however, would take an inordinate amount of time on larger boards with more flights. A simple sorting solution would probably be more efficient and easier to implement.
+
+\subsection{Test10airports50flights}
+
+Our performance on this map was not nearly as strong as it could’ve been. Our player was able to land all flights in 159 steps, with 114 being the best in the class. This board presented the challenge of high-density airports. Consider Figure R9 below:
+
+\includegraphics[width=125mm]{pics/R9.png}
+\caption{Figure R9: A high-density airport on test50flights10airports.txt board}
+
+The leftmost airport, into which the dark grey plane is flying, is a high-density airport. After the dark grey plane lands, the yellow flies in immediately, and then the light grey from the bottom. This causes the planes on the ground at the airport to delay an unreasonable length of time. As the simulation progresses, we see that the same airport that was so in demand earlier holds the two last planes to land. In this case, our strategy of greedily taking planes off backfires. Each of the planes that needed to land at the high density airport was able to take off quickly at the beginning of the simulation but, in doing so, blocked important planes from departing. An improvement to our player would take into consideration the activity both in and out of an airport when scheduling planes.
+
+\subsection{tight_grid_circle}
+
+Our player performed quite well on this board finishing in 148 steps, only 14 more than the best in the class. An interesting part of our player that this board brings to light is the nondeterministic nature of our solution. Running repeated trials, we were able to finish the board in as few steps as 123 (and as many as 190) as seen in Figure R10:
+
+\includegraphics[width=125mm]{pics/R10.png}
+\caption{Figure R10: Dodger finishing in 123 steps on tight_grid_circle.txt board}
+
+The reason that we saw such variance on this board in particular was because of the large number of equidistant paths for A* to choose between. The board is basically two sets of planes, the 20 outer, and the 10 inner. Every plane in each group is equidistant from its destination and thus the A* implementation gets to make a lot of random decisions. While it would have been possible for us to choose a metric to choose paths by, it is interesting to see the effect that the randomness has on our runtime. In the best case we beat the current best in the class, in the worst we are nearly the worst.
+
+\subsection{zamBoard}
+
+Our performance on zamBoard was the best in the class. Our player completed the board in 178 steps, 21 steps faster than the next fastest player. This board presented the challenge of unused space. With all of the planes and airports at the center of the board, there was a lot of room to work with if you were simply to take longer paths away from the confluence in the middle. On this board we can again attribute our success to taking flights off as soon as possible and letting A* deal with their paths, even if they are not as direct as they could be. This is illustrated in Figure R11 below, where our use of space is evident:
+
+\includegraphics[width=125mm]{pics/R11.png}
+\caption{Figure R11: Dodger on zamBoard.txt at step 60}
+
+While not perfect, we are happy how we performed on this board as it was not a case we had thought to optimize for when building the player.
+
 %%%
 \newpage
 \section{Contributions}
