@@ -132,16 +132,19 @@ We found that one of the most important considerations when scheduling our flows
 At each call of the \ms{updatePlanes()} method, our solution will iterate through the collection of 
 planes and perform the appropriate update action based on its current status within the session.
 \begin{itemize}
-  \item For each plane that has not taken off, we calculate a flight plan using the pathfinding
-    implementation described below, which ultimately returns a \ms{List<Waypoint>} representing the waypoints that must
-    be traversed by the plane on the way to its destination. The plane is then dispatched heading toward
-    its first waypoint.
-  \item For each plane that has taken off, check its current bearing and location relative to its
-    current waypoint. If it is within a certain radius of its current sought \ms{Waypoint}, pop that \ms{Waypoint} off
-    the front of the list and take the next \ms{Waypoint} in the list to be the current \ms{Waypoint}. If the
-    plane's bearing is directed toward its current \ms{Waypoint}, then maintain course; else, turn the plane either
-    \ms{TURN\_RADIUS} or $Angle(Current Bearing, Goal Bearing)$ degrees (whichever is smaller) toward the current
-    waypoint. 
+  \item For each plane that has not taken off, we calculate a flight plan using
+    the pathfinding implementation described below, which ultimately returns a
+    \ms{List<Waypoint>} representing the waypoints that must be traversed by the
+    plane on the way to its destination. The plane is then dispatched heading
+    toward its first waypoint.
+  \item For each plane that has taken off, check its current bearing and
+    location relative to its current waypoint. If it is within a certain radius
+    of its current sought \ms{Waypoint}, pop that \ms{Waypoint} off the front of
+    the list and take the next \ms{Waypoint} in the list to be the current
+    \ms{Waypoint}. If the plane's bearing is directed toward its current
+    \ms{Waypoint}, then maintain course; else, turn the plane either
+    \ms{TURN\_RADIUS} or $Angle(Current Bearing, Goal Bearing)$ degrees
+    (whichever is smaller) toward the current waypoint. 
 \end{itemize}
 
 \begin{algorithm}
@@ -197,13 +200,13 @@ planes and perform the appropriate update action based on its current status wit
 
 \begin{figure}[h!]
   \includegraphics[width=150mm]{wp.png}
-  \caption{Ad-hoc Obstacles and Waypoint Placement}
+  \caption{Ad-hoc virtual obstacles and waypoint Placement}
 \label{fig:wp}
 \end{figure}
 
 \begin{figure}[h!]
   \includegraphics[width=150mm]{diagonal_flows.png}
-  \caption{Flow Obstacles and Waypoint Placement}
+  \caption{Flow-based virtual obstacles and waypoint Placement}
 \label{fig:diagonal_flows}
 \end{figure}
 
@@ -236,7 +239,19 @@ point and one of the colliding planes is forced to go around this virtual
 obstacle using the four waypoints around this obstacle, so as to avoid "real"
 collision. Waypoints were also added in a radial pattern around the airports, so
 as to allow planes to take-off in opposite direction than the destination, if
-they can. Figure~\ref{fig:diagonal_flows} shows obstacle and waypoint placement
+they can. To recap earlier discussion, each (non-flow) plane computes path to
+destination before it has taken-off. It simulates (initially) a straight line
+flight-path to destination and recursively adds virtual obstacles and reruns the
+simulation on detecting collisions with planes which are already in the air.
+Care is taken to prevent infinite collision-detection/simulation loop by
+enforcing a cap on maximum simulations a plane can run before taking-off, though
+this scenario rarely occurs. Also, a limit is placed on the maximum length of
+the detour path a plane could choose, so as to prevent unreasonably long paths,
+i.e. we observed that sometimes it is better to delay taking-off the planes,
+rather than take a long detour.
+
+
+Figure~\ref{fig:diagonal_flows} shows obstacle and waypoint placement
 for group of planes forming "flows". Unlike ad-hoc, real-time approach for
 pathfinding before taking-off new planes, the flow planes fly along pre-computed
 paths. This closely resembles circuit establishment approach in communication
@@ -246,6 +261,8 @@ multiple flows intersect each other. As mentioned earlier, the flows are
 detected before running the actual simulation and paths/circuits are
 pre-computed too. The non-flow planes attempt to fly around the flow-planes
 using the normal ad-hoc approach at runtime.
+
+
 
 \subsection{Referenced Constants}
 \begin{itemize}
