@@ -211,18 +211,18 @@ planes and perform the appropriate update action based on its current status wit
 \end{figure}
 
 \subsection{Pathfinding Implementation}
-Pathfinding in our implementation is based off of the A* algorithm, using
-straight-line distance as a heuristic. Because this heuristic is admissible
-(i.e. it never over-estimates the actual distance needed to reach the goal), one
-knows that for any particular board configuration it will generate the optimal
-path between the source and destination. The procedure for determining a path is
-explained in Algorithm~\ref{algo:astar}. Our A-Star algorithm implementation
-takes as input a set of waypoint locations on the board to traverse to get from
-a source to destination.  The waypoints have to be placed so that A* is able to
-find path between any two given points on the board despite the obstacles and
-the path distance has to be reasonably close to the shortest possible distance
-between these points.  Both these criterion are satisfied when the waypoints are
-near the edges of the obstacles. 
+Pathfinding in our implementation is a time-aware variant of the A* algorithm,
+using straight-line distance as a heuristic. Because this heuristic is
+admissible (i.e. it never over-estimates the actual distance needed to reach the
+goal), one knows that for any particular board configuration it will generate
+the optimal path between the source and destination. The procedure for
+determining a path is explained in Algorithm~\ref{algo:astar}. Our A-Star
+algorithm implementation takes as input a set of waypoint locations on the board
+to traverse to get from a source to destination.  The waypoints have to be
+placed so that A* is able to find path between any two given points on the board
+despite the obstacles and the path distance has to be reasonably close to the
+shortest possible distance between these points.  Both these criterion are
+satisfied when the waypoints are near the edges of the obstacles. 
 
 In the initial implementation, a collision obstacle resulting from a collision
 in a prior simulation would be present in each time step of subsequent
@@ -281,6 +281,22 @@ using the normal ad-hoc approach at runtime.
 \section{Contributions}
 
 \subsection{Alternative Success Metrics}
+
+\subsection{Elegant time-aware approach path-finding}
+
+Our approach utilizes time-aware variant of A* algorithm for all scenarios.
+There are no hard-coded traffic patterns or behaviors, which makes our approach
+very elegant. E.g. plane's take-off and approach angles, in-flight traffic
+patterns and even the flows are computed using the A* algorithm. Our
+implementation adapted to different board scenarios automatically, and we rarely
+had to tweak anything.
+
+\subsection{Tracer implementation}
+
+As part of our testing, we enhanced the simulator to visualize the collisions
+and to trace the plane's path finding attempts. This enhancement allowed us to
+quickly identify the bottlenecks and helped us to efficiently place the
+waypoints.
 
 %%%
 \newpage
